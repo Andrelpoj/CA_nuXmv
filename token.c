@@ -8,6 +8,8 @@ int main(){
 	char token[50];
 	char c;
 
+	int count = 0;
+
 	printf("Digite o endereço do arquivo de origem:");
 	scanf("%s", &f);
 	orig = fopen(f,"r");
@@ -18,36 +20,88 @@ int main(){
 
 	if((orig)&&(dest)) {
 		while( (c = getc(orig)) != EOF ){
-			//printf("%c\n",c);
-			token = c;			
-			if(c == 'C'){
+			//pular espaços			
+			while((c == '\n') || (c == ' ') || (c == '\t')){				
 				c = getc(orig);
-				if(c == EOF){
-					fprinf(dest, token);
+				if (c == EOF){
+					return 0; //erro
+				}
+			}
+			
+			if((c==1)||(c==2)||(c==3)||(c==4)||(c==5)||(c==6)||(c==7)||(c==8)||(c==9)){
+				token[count] = c;
+				count++;
+				
+				c = getc(orig);
+				while((c!='\n')&&(c!=' ')&&(c!='\t')&&(c!=EOF)&&( (c==1)||(c==2)||(c==3)||(c==4)||(c==5)||(c==6)||(c==7)||(c==8)||(c==9) ){
+					token[count] = c;
+					count++;
+					c = getc(orig);
+				}
+				if (c == EOF)||(c=='\n')||(c==' ')||(c=='\t')){	
+					token[count] = '\n';
+					token[count+1] = '\0';				
+					fprintf(dest,token);
+					count = 0;
 				}
 				else{
-					if(c == 'A'){
-						c = getc(orig);
-						if((c == '\n')||(c == ' ')||(c == '\t')){
-								
-						}
+					if ((c!=1)&&(c!=2)&&(c!=3)&&(c!=4)&&(c!=5)&&(c!=6)&&(c!=7)&&(c!=8)&&(c!=9)){
+						return 0;
+					}
+				}
+				
+			}
+			else{
+
+				token[count] = c;
+				count++;
+						
+				if(c == 'C'){
+					c = getc(orig);
+					if(c == EOF){	
+						token[count] = '\0';				
+						fprintf(dest,token);
+						count = 0;
 					}
 					else{
-						//id
-						token = token + c;
-						c = getc(orig);
-						while((c != EOF)&&(c != ' ')&&(c != '\n')&&(c != '\t')){
-							token = token + c;
+						if(c == 'A'){
+							token[count] = c;
+							count++;
+
 							c = getc(orig);
+							if((c == '\n')||(c == ' ')||(c == '\t')){
+								token[count] = '\n';
+								token[count+1] = '\0';							
+								fprintf(dest,token);
+								count = 0;
+							}
 						}
-						fprintf(dest,token);
-						if(c == EOF){
-							return 0;
+						else{
+							//id
+							token[count] = c;
+							count++;
+
+							c = getc(orig);
+							while((c != EOF)&&(c != ' ')&&(c != '\n')&&(c != '\t')){
+								token[count] = c;
+								count++;
+
+								c = getc(orig);
+							}
+							token[count] = '\n';
+							token[count+1] = '\0';
+							fprintf(dest,token);
+							count = 0;
+
+							if(c == EOF){
+								return 0;
+							}
 						}
 					}
 				}
 			}
 		}
-	}
-	fclose(file);
+		fclose(orig);
+		fclose(dest);
+	}	
 }
