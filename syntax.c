@@ -1,16 +1,23 @@
 #define LMAXTOKEN 255
 
+#define THEIGHT 18 
+#define TWIDTH 29
+#define TDEPTH 10
+#define Token[THEIGHT][TWIDTH][TDEPTH] grid;
+
+#define ENDCHAR "@"
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
 
-typedef struct node{
+typedef struct node {
     char content[LMAXTOKEN];
     struct node *child, *sibling;
-}Node;
+} Node;
 
 typedef struct{
-    char name[LMAXTOKEN];
+    char value[LMAXTOKEN];
     char type[LMAXTOKEN];
 }Token;
 //typedef struct Token TOKEN;
@@ -68,170 +75,167 @@ Token* pop(T_STACK** root)
     return popped;
 }
 
-/*
-int strcmp(char n1[], char n2[]){
-    int i=0;
-    while((n1[i] != '\0') && (n2[i] != '\0')){
-        if(n1[i] != n2[i])
-            return 0;
-        ++i;
+void fillTable(){
+    Token t;
+
+    //token de erro
+    sprintf(t.value,"%s","");
+    sprintf(t.type,"%s","#");
+
+    int i, j, k;
+    for(i=0;i<THEIGHT;i++){
+        for(j=0;j<TWIDTH;j++){
+            for(k=0;k<TDEPTH;k++){
+                grid[i][j][k] = t;
+            }
+        }    
     }
-    if((n1[i] == '\0') && (n2[i] == '\0'))
-        return 1;
-    else
-        return 0;
-}*/
+    
+    //Regra 1
+    sprintf(t.value,"%s","transitions");
+    sprintf(t.type,"%s","0");
+    grid[0][0][0] = t;
+
+    sprintf(t.value,"%s","names");
+    sprintf(t.type,"%s","0");
+    grid[0][0][1] = t;
+
+    sprintf(t.value,"%s","istates");
+    sprintf(t.type,"%s","0");
+    grid[0][0][2] = t;
+    
+    sprintf(t.value,"%s","states");
+    sprintf(t.type,"%s","0");
+    grid[0][0][3] = t;
+
+    sprintf(t.value,"%s","id");
+    sprintf(t.type,"%s","id");
+    grid[0][0][4] = t;
+
+    sprintf(t.value,"%s","CA");
+    sprintf(t.type,"%s","CA");
+    grid[0][0][5] = t;
+
+    sprintf(t.value,"%s","end");
+    sprintf(t.type,"%s",ENDCHAR);
+    grid[0][0][6] = t;
 
 
-T_STACK*** createTable(){
-  int m,n;
-  m = 17;
-  n = 28;
+    //Regra 2
+    sprintf(t.name, "%s", "set");
+    sprintf(t.type, "%s", "0");
+    grid[1][1][0] = t;
 
-  T_STACK*** grid = (T_STACK***) malloc(m*sizeof(T_STACK**));
+    sprintf(t.name, "%s", "STATES");
+    sprintf(t.type, "%s", "STATES");
+    grid[1][1][1] = t;
 
-  for(int i=0;i<m;i++){
-    grid[i] = (T_STACK**) malloc(n*sizeof(T_STACK*));
-  }
+    sprintf(t.value,"%s","end");
+    sprintf(t.type,"%s",ENDCHAR);
+    grid[1][1][2] = t;
 
-  /*
+    //Regra 3
+    sprintf(t.name, "%s", "set");
+    sprintf(t.type, "%s", "0");
+    grid[2][2][0] = t;
 
-  Token t;
-  //Regra 1
-  sprintf(t.name, "%s", "transitions");
-  sprintf(t.type, "%s", "0");
-  T_STACK* s = newStack(t,NULL);
+    sprintf(t.name, "%s", "STATES");
+    sprintf(t.type, "%s", "STATES");
+    grid[2][2][1] = t;
 
-  sprintf(t.name, "%s", "names");
-  sprintf(t.type, "%s", "0");
-  push(&s,t);
+    sprintf(t.name, "%s", "INITIAL");
+    sprintf(t.type, "%s", "INITIAL");
+    grid[2][2][2] = t;
 
-  sprintf(t.name, "%s", "istates");
-  sprintf(t.type, "%s", "0");
-  push(&s,t);
+    sprintf(t.value,"%s","end");
+    sprintf(t.type,"%s",ENDCHAR);
+    grid[2][2][3] = t;
 
-  sprintf(t.name, "%s", "states");
-  sprintf(t.type, "%s", "0");
-  push(&s,t);
+    //Regra 4
+    sprintf(t.name, "%s", "set");
+    sprintf(t.type, "%s", "0");
+    grid[3][3][0] = t;
 
-  sprintf(t.name, "%s", "id");
-  sprintf(t.type, "%s", "id");
-  push(&s,t);
+    sprintf(t.name, "%s", "NAMES");
+    sprintf(t.type, "%s", "NAMES");
+    grid[3][3][1] = t;
 
-  sprintf(t.name, "%s", "CA");
-  sprintf(t.type, "%s", "CA");
-  push(&s,t);
+    sprintf(t.value,"%s","end");
+    sprintf(t.type,"%s",ENDCHAR);
+    grid[3][3][2] = t;
 
-  grid[0][0] = s;
+    //Regra 5
+    sprintf(t.name, "%s", "t_set");
+    sprintf(t.type, "%s", "0");
+    grid[4][4][0] = t;
 
-  //Regra 2
-  //libera(s);
-  sprintf(t.name, "%s", "set");
-  sprintf(t.type, "%s", "0");
-  s = newStack(t);
+    sprintf(t.name, "%s", "TRANSITIONS");
+    sprintf(t.type, "%s", "TRANSITIONS");
+    grid[4][4][1] = t;
 
-  sprintf(t.name, "%s", "STATES");
-  sprintf(t.type, "%s", "STATES");
-  push(&s,t);
+    sprintf(t.value,"%s","end");
+    sprintf(t.type,"%s",ENDCHAR);
+    grid[4][4][2] = t;
 
-  grid[1][1] = s;
+    //Regra 6
+    sprintf(t.name, "%s", "t_set");
+    sprintf(t.type, "%s", "0");
+    grid[5][5][0] = t;
 
-  //Regra 3
-  //libera(s);
-  sprintf(t.name, "%s", "set");
-  sprintf(t.type, "%s", "0");
-  s = newStack(t);
+    sprintf(t.name, "%s", "]");
+    sprintf(t.type, "%s", "]");
+    grid[5][5][1] = t;
 
-  sprintf(t.name, "%s", "STATES");
-  sprintf(t.type, "%s", "STATES");
-  push(&s,t);
+    sprintf(t.name, "%s", "data_constraint");
+    sprintf(t.type, "%s", "0");
+    grid[5][5][2] = t;
 
-  sprintf(t.name, "%s", "INITIAL");
-  sprintf(t.type, "%s", "INITIAL");
-  push(&s,t);
+    sprintf(t.name, "%s", "[");
+    sprintf(t.type, "%s", "[");
+    grid[5][5][3] = t;
 
-  grid[2][2] = s;
+    sprintf(t.name, "%s", ")");
+    sprintf(t.type, "%s", ")");
+    grid[5][5][4] = t;
 
-  //Regra 4
-  //libera(s);
-  sprintf(t.name, "%s", "set");
-  sprintf(t.type, "%s", "0");
-  s = newStack(t);
+    sprintf(t.name, "%s", "set");
+    sprintf(t.type, "%s", "0");
+    grid[5][5][5] = t;
 
-  sprintf(t.name, "%s", "NAMES");
-  sprintf(t.type, "%s", "NAMES");
-  push(&s,t);
+    sprintf(t.name, "%s", "(");
+    sprintf(t.type, "%s", "(");
+    grid[5][5][6] = t;
 
-  grid[3][3] = s;
+    sprintf(t.name, "%s", "id");
+    sprintf(t.type, "%s", "id");
+    grid[5][5][7] = t;
 
-  //Regra 5
-  //libera(s);
-  sprintf(t.name, "%s", "t_set");
-  sprintf(t.type, "%s", "0");
-  s = newStack(t);
+    sprintf(t.name, "%s", ":");
+    sprintf(t.type, "%s", ":");
+    grid[5][5][8] = t;
 
-  sprintf(t.name, "%s", "TRANSITIONS");
-  sprintf(t.type, "%s", "TRANSITIONS");
-  push(&s,t);
+    sprintf(t.name, "%s", "id");
+    sprintf(t.type, "%s", "id");
+    grid[5][5][9] = t;
+    //a regra acima n tem endchar pq ela usa todo o espaço reservado para regras
 
-  grid[4][4] = s;
+    //Regra 7
+    // colocar simbolo para representar epsilon
+    sprintf(t.name, "%s", "epsilon");
+    sprintf(t.type, "%s", "");
+    grid[5][28][0] = t;
 
-  //Regra 6
-  //libera(s);
-  sprintf(t.name, "%s", "t_set");
-  sprintf(t.type, "%s", "0");
-  s = newStack(t);
+    //Regra 8
+    
 
-  sprintf(t.name, "%s", "]");
-  sprintf(t.type, "%s", "]");
-  push(&s,t);
-
-  sprintf(t.name, "%s", "data_constraint");
-  sprintf(t.type, "%s", "0");
-  push(&s,t);
-
-  sprintf(t.name, "%s", "[");
-  sprintf(t.type, "%s", "[");
-  push(&s,t);
-
-  sprintf(t.name, "%s", ")");
-  sprintf(t.type, "%s", ")");
-  push(&s,t);
-
-  sprintf(t.name, "%s", "set");
-  sprintf(t.type, "%s", "0");
-  push(&s,t);
-
-  sprintf(t.name, "%s", "(");
-  sprintf(t.type, "%s", "(");
-  push(&s,t);
-
-  sprintf(t.name, "%s", "id");
-  sprintf(t.type, "%s", "id");
-  push(&s,t);
-
-  sprintf(t.name, "%s", ":");
-  sprintf(t.type, "%s", ":");
-  push(&s,t);
-
-  sprintf(t.name, "%s", "id");
-  sprintf(t.type, "%s", "id");
-  push(&s,t);
-
-  grid[5][5] = s;
-
-  //Regra 7
-  //libera(s);
-  // colocar simbolo para representar epsilon
-  grid[5][27] = s;
-
-  */
+       
 }
 
 int main(int argc, char *argv[]) {
 
-    //T_STACK* grid[17][28];
-    T_STACK*** grid = createTable();
+    //T_STACK* grid[18][28];
+    //T_STACK*** grid = createTable();
+    fillTable();
 
     /*FILE *ca, *out = stdout;
 
