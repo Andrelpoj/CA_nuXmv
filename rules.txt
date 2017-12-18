@@ -1,0 +1,86 @@
+CA
+STATES
+INITIAL
+NAMES
+TRANSITIONS
+id
+num
+,
+(
+)
+-
++
+*
+/
+&
+|
+<
+<=
+>
+>=
+=
+!=
+->
+<->
+:
+!
+[
+]
+$
+VAR
+ca
+states
+istates
+names
+transitions
+t_set
+set
+set'
+bop
+rop
+aop
+data_constraint
+E'
+T
+T'
+F
+F'
+G
+RULES
+ca : CA id states istates names transitions
+states : STATES set
+istates : INITIAL STATES set
+names : NAMES set
+transitions : TRANSITIONS t_set
+t_set : id : id ( set ) [ data_constraint ]  t_set
+t_set : epsilon
+set : id set'
+set' : , set
+set' : epsilon
+bop : &
+bop : |
+bop : ->
+bop : <->
+rop : >
+rop : <
+rop : >=
+rop : <=
+rop : '='
+rop : !=
+aop : +
+aop : -
+aop : *
+aop : /
+data_constraint : T E'
+E' : bop T E'
+E' : epsilon
+T : F T'
+T' : rop F T'
+T' : epsilon
+F : G F'
+F' : aop G F'
+F' : epsilon
+G : ( data_constraint )
+G : id
+G : num
+G : ! G
