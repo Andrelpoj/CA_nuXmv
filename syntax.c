@@ -195,7 +195,7 @@ Token** createTable(char* orig){
         printf("value: %s,type: %s\n",list->token->value, list->token->type);
         list = list->next;
     }
-    
+
 
 
 
@@ -210,7 +210,6 @@ int main(int argc, char *argv[]) {
 
     //T_STACK* grid[18][28];
     //T_STACK*** grid = createTable();
-    //fillTable();
 
     Token** grid = createTable("rules.txt");
 
