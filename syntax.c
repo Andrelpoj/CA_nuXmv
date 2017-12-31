@@ -11,18 +11,32 @@
 #include<stdlib.h>
 #include<string.h>
 
-char NONTERMINALS[LMAXTOKEN][LMAXTOKEN];
-char TERMINALS[LMAXTOKEN][LMAXTOKEN];
-
 typedef struct node {
     char content[LMAXTOKEN];
     struct node *child, *sibling;
-} Node;
+}Node;
 
 typedef struct{
     char value[LMAXTOKEN];
     char type[LMAXTOKEN];
 }Token;
+
+typedef struct TokenList{
+    Token* token;
+    struct TokenList* next;
+}T_LIST;
+
+typedef struct TokenStack{
+    Token* token;
+    Node* node;
+    struct TokenStack *next;
+}T_STACK;
+
+
+char NONTERMINALS[LMAXTOKEN][LMAXTOKEN];
+char TERMINALS[LMAXTOKEN][LMAXTOKEN];
+T_LIST* RULES;
+
 
 Token* newToken(char value[LMAXTOKEN], char type[LMAXTOKEN]){
     Token* t = (Token*) malloc(sizeof(Token));
@@ -31,11 +45,6 @@ Token* newToken(char value[LMAXTOKEN], char type[LMAXTOKEN]){
     return t;
 }
 
-typedef struct TokenList{
-    Token* token;
-    struct TokenList* next;
-}T_LIST;
-
 T_LIST* newList(Token* t){
     T_LIST* listNode = (T_LIST*) malloc(sizeof(T_LIST));
     listNode->token = t;
@@ -43,13 +52,12 @@ T_LIST* newList(Token* t){
     return listNode;
 }
 
-void append(T_LIST* list, Token* t){
-    if(!list){
-        list->token = t;
-        list->next = NULL;
+void append(T_LIST** list, Token* t){
+    if(! *list){
+    	*list = newList(t);
     }
     else{
-        T_LIST* p = list;
+        T_LIST* p = *list;
         while(p->next){
             p = p->next;
         }
@@ -75,12 +83,6 @@ void delete(T_LIST* list, Token* t){
         }
     }
 }
-
-typedef struct TokenStack{
-    Token* token;
-    Node* node;
-    struct TokenStack *next;
-}T_STACK;
 
 T_STACK* newStack(Token* t, Node* n)
 {
@@ -122,7 +124,24 @@ Token* pop(T_STACK** root)
     return popped;
 }
 
-
+Token* findType(char value[LMAXTOKEN]){
+	//char terminals[LMAXTOKEN][LMAXTOKEN] = TERMINALS;
+    int i=0;
+    while(strlen(TERMINALS[i])!=0){
+		if(strcmp(TERMINALS[i], value) == 0){
+			return newToken(value,TERMINALS[i]);	
+		}
+		i++;  	
+	}	
+	i=0;
+	while(strlen(NONTERMINALS[i])!=0){
+		if(strcmp(NONTERMINALS[i], value) == 0){
+			return newToken(value,NONTERMINALS[i]);	
+		}  	
+		i++;
+	}
+	
+}
 
 Token** createTable(char* orig){
     FILE *arq = fopen(orig,"r");
@@ -130,7 +149,6 @@ Token** createTable(char* orig){
         printf("error while opening file %s\n", orig);
         return NULL;
     }
-
 
     char temp[LMAXTOKEN];
     char var[10] = "VAR";
@@ -174,36 +192,60 @@ Token** createTable(char* orig){
         i++;
     }
     quant_NT = i;
+    
     /*
     i = 0;
     while(strlen(NONTERMINALS[i])!=0){
         printf("%s\n",NONTERMINALS[i]);
         i++;
     }
-    */
+	*/
 
-
+    /*
     Token* t = newToken("CA","T");
-    T_LIST* l = newList(t);  //Deixo a criacao da lista dessa forma?
-    t = newToken("states","NT");
-    append(l,t);
+    //T_LIST* l = newList(t);  //Deixo a criacao da lista dessa forma?
+    T_LIST* l = NULL;
+	t = newToken("states","NT");
+    append(&l,t);
     t = newToken("istates","NT");
-    append(l,t);
+    append(&l,t);
 
     T_LIST* list = l;
     while(list){
         printf("value: %s,type: %s\n",list->token->value, list->token->type);
         list = list->next;
     }
+    */
 
+	
+    if ( fgets (temp , LMAXTOKEN , arq) != NULL ) {
+    	char *tkn = strtok(temp," ");
+    	T_LIST* rule = NULL;
 
+    	while (tkn != NULL){
+    		//printf("The token is:  %s\n", tkn);
+            Token* new = findType(tkn);
+        	append(&rule,new);
+        	tkn = strtok(NULL," \n\t");
+    	}
+    	
+    	/*
+    	T_LIST* list = rule;
+	    while(list){
+	    	printf("value: %s,type: %s\n",list->token->value, list->token->type);
+	        list = list->next;
+		}
+		*/
+    	
+    }
+    
+    
 
-
-    Token* tableFirstFollow[quant_T+quant_NT][2];
-
-
+    //T_LIST* tableFirstFollow[quant_T+quant_NT][2];
+	
+	fclose(arq);
     return NULL;
-
+	
 }
 
 int main(int argc, char *argv[]) {
