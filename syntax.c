@@ -32,10 +32,14 @@ typedef struct TokenStack{
     struct TokenStack *next;
 }T_STACK;
 
+typedef struct RulesList{
+	T_LIST* rule;
+	struct RulesList* next;	
+}R_LIST;
 
 char NONTERMINALS[LMAXTOKEN][LMAXTOKEN];
 char TERMINALS[LMAXTOKEN][LMAXTOKEN];
-T_LIST* RULES;
+R_LIST* RULES = NULL;
 
 
 Token* newToken(char value[LMAXTOKEN], char type[LMAXTOKEN]){
@@ -216,30 +220,74 @@ Token** createTable(char* orig){
         list = list->next;
     }
     */
-
-	
-    if ( fgets (temp , LMAXTOKEN , arq) != NULL ) {
-    	char *tkn = strtok(temp," ");
+    
+    
+//    fgets (temp , 3 , arq);
+//    printf("%s\n",temp);
+//    fgets (temp , 17 , arq);
+//    printf("%s\n",temp);
+//    fgets (temp , 15, arq);
+//    printf("%s\n",temp);
+	while ( fgets (temp , LMAXTOKEN , arq) != NULL ) {
+//    	printf("%d",strlen(temp));
+//		printf("%s\n",temp);
+		
+		
+		char *tkn = strtok(temp," ");
     	T_LIST* rule = NULL;
-
+    	
     	while (tkn != NULL){
     		//printf("The token is:  %s\n", tkn);
-            Token* new = findType(tkn);
+			Token* new = findType(tkn);
         	append(&rule,new);
-        	tkn = strtok(NULL," \n\t");
-    	}
+        	tkn = strtok(NULL," \n\t\r");
+    	}    	
     	
-    	/*
     	T_LIST* list = rule;
 	    while(list){
-	    	printf("value: %s,type: %s\n",list->token->value, list->token->type);
+	    	//printf("value: %s,type: %s\n",list->token->value, list->token->type);
 	        list = list->next;
 		}
+		
+		/*
+		T_LIST* list = rule;
+	    while(list){
+	    	printf("type: %s", list->token->type);
+	        list = list->next;
+		}
+		printf("\n");
 		*/
-    	
+		
+		if(!RULES){
+			RULES = (R_LIST*) malloc(sizeof(R_LIST));
+			RULES->rule = rule;
+			RULES->next = NULL; 
+		}
+		else{
+			R_LIST* r = RULES;
+			while(r->next){
+				r = r->next;
+			}
+			r->next = (R_LIST*) malloc(sizeof(R_LIST));
+			r->next->rule = rule;
+			r->next->next = NULL;
+		}	
     }
     
     
+    /*
+    R_LIST* r = RULES;
+    while(r){
+    	T_LIST* list = r->rule;
+	    while(list){
+	    	printf("%s ", list->token->type);
+	        list = list->next;
+		}
+		printf("\n");
+		
+    	r = r->next;
+	}
+    */
 
     //T_LIST* tableFirstFollow[quant_T+quant_NT][2];
 	
