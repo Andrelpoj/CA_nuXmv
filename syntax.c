@@ -4,8 +4,6 @@
 //#define TWIDTH 29
 #define TDEPTH 20
 
-#define ENDCHAR "@"
-
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -36,10 +34,12 @@ typedef struct RulesList{
     struct RulesList* next;
 }R_LIST;
 
+//Global definitions
 char NONTERMINALS[LMAXTOKEN][LMAXTOKEN];
 char TERMINALS[LMAXTOKEN][LMAXTOKEN];
 R_LIST* RULES = NULL;
-
+T_LIST* firstTable[LMAXTOKEN];
+T_LIST* followTable[LMAXTOKEN];
 
 Token* newToken(char value[LMAXTOKEN], char type[LMAXTOKEN]){
     Token* t = (Token*) malloc(sizeof(Token));
@@ -49,6 +49,8 @@ Token* newToken(char value[LMAXTOKEN], char type[LMAXTOKEN]){
 }
 
 T_LIST* newList(Token* t){
+    if (!t) return NULL;
+
     T_LIST* listNode = (T_LIST*) malloc(sizeof(T_LIST));
     listNode->token = t;
     listNode->next = NULL;
@@ -56,6 +58,8 @@ T_LIST* newList(Token* t){
 }
 
 void append(T_LIST** list, Token* t){
+    if(!t) return;
+
     if(! *list){
         *list = newList(t);
     }
@@ -72,17 +76,27 @@ int tkncmp(Token* t1, Token* t2){
     if(!strcmp(t1->value,t2->value) && !strcmp(t1->type,t2->type)){
         return 1;
     }
+    //return 0;
 }
 
-void delete(T_LIST* list, Token* t){
-    T_LIST* p1 = list;
+void delete(T_LIST** list, Token* t){
+    T_LIST* p1 = *list;
     T_LIST* p2;
-    while(p1->next){
-        p2 = p1;
-        p1 = p1->next;
-        if(tkncmp(t,p1->token)){
-            p2->next = p1->next;
-            free(p1);
+
+    //printf("type: %s",p1->token->type);
+    if(tkncmp(t,p1->token)){
+        *list = p1->next;
+        free(p1);
+    }
+    else{
+        while(p1){
+            p2 = p1;
+            p1 = p1->next;
+            if(tkncmp(t,p1->token)){
+                p2->next = p1->next;
+                free(p1);
+                break;
+            }
         }
     }
 }
@@ -169,7 +183,70 @@ int isNonTerminal(char type[LMAXTOKEN]){
     return 0;
 }
 
+void fillFirstTable(int quant_NT){
+    int i =0;
+    for(i=0;i<LMAXTOKEN;i++){
+        firstTable[i] = NULL;
+    }
+
+    //Fill the FirstTable
+    for(i=0;i<quant_NT;i++){
+        R_LIST* r = RULES;
+        while(r){
+            T_LIST* list = r->rule;
+            if (strcmp(NONTERMINALS[i],list->token->type) == 0){
+                list = list->next->next; //pula o ':'
+
+                //append(&(firstTable[i]),list->token);
+                append(&(firstTable[i]),newToken(list->token->value,list->token->type));
+            }
+            r = r->next;
+        }
+    }
+
+    //Replaces all NT for T
+    for(i=0;i<quant_NT;i++){
+        T_LIST* l = firstTable[i];
+        //delete(&firstTable[i],newToken("rop","rop"));
+        printf("%s: ",NONTERMINALS[i]);
+        while(l){
+            printf("%s ",l->token->type);
+            l = l->next;
+        }
+        printf("\n");
+    }
+    //return firstTable;
+}
+
+/*
+T_LIST* first(char type[LMAXTOKEN]){
+    T_LIST* list = NULL;
+    if(isTerminal(type)){
+        append(&list,newToken(type,type));
+        return list;
+    }
+    else{
+        R_LIST* r = RULES;
+        while(r){
+            T_LIST* temp = r->rule;
+            if (strcmp(type,temp->token->type) == 0){
+                temp = temp->next->next; //pula o ':'
+
+                temp = first(temp->token->type);
+                while(temp){
+                    //append(&list,temp->token);
+                    append(&list,newToken(temp->token->value,temp->token->type));
+                    temp = temp->next;
+                }
+            }
+            r = r->next;
+        }
+        return list;
+    }
+}*/
+
 Token** createTable(char* orig){
+
     FILE *arq = fopen(orig,"r");
     if(arq == NULL) {
         printf("error while opening file %s\n", orig);
@@ -303,30 +380,22 @@ Token** createTable(char* orig){
     }
     */
 
-    T_LIST* firstTable [quant_NT];
-    T_LIST* followTable [quant_NT];
+    /*
+    T_LIST* firstTable[quant_NT];
+    T_LIST* followTable[quant_NT];
     for(i=0;i<quant_NT;i++){
         firstTable[i] = NULL;
         followTable[i] = NULL;
     }
+    */
 
-	
-    for(i=0;i<quant_NT;i++){
-        R_LIST* r = RULES;
-        while(r){
-            T_LIST* list = r->rule;
-            if (strcmp(NONTERMINALS[i],list->token->type) == 0){
-                list = list->next->next; //pula o ':'
-                if (isTerminal(list->token->type)){
-                    //append(&(firstTable[i]),list->token);
-                    append(&(firstTable[i]),newToken(list->token->value,list->token->type));
-                }
-                //else
-            }
-            r = r->next;
-        }
-    }
+    fillFirstTable(quant_NT);
 
+
+    //firstTable = createFirstTable(quant_NT);
+
+
+    /*
     for(i=0;i<quant_NT;i++){
         T_LIST* list = firstTable[i];
         printf("%s\n",NONTERMINALS[i]);
@@ -336,7 +405,7 @@ Token** createTable(char* orig){
         }
         printf("\n");
     }
-
+    */
 
     fclose(arq);
     return NULL;
@@ -344,10 +413,6 @@ Token** createTable(char* orig){
 }
 
 int main(int argc, char *argv[]) {
-
-    //T_STACK* grid[18][28];
-    //T_STACK*** grid = createTable();
-
     Token** grid = createTable("rules.txt");
 
     /*FILE *ca, *out = stdout;
