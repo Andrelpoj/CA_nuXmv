@@ -188,6 +188,41 @@ int isNonTerminal(char type[LMAXTOKEN]){
     return 0;
 }
 
+int findNonTerminalIndex(char type[LMAXTOKEN]){
+    int i=0;
+    while(strlen(NONTERMINALS[i])!=0){
+        if(strcmp(NONTERMINALS[i], type) == 0){
+            return i;
+        }
+        i++;
+    }
+    return -1;
+}
+
+void replaceNT(int index){
+    T_LIST* list = firstTable[index];
+    int nonTerminalIndex;
+    while(list){
+        if(isNonTerminal(list->token->type)){
+            nonTerminalIndex = findNonTerminalIndex(list->token->type);
+            if(nonTerminalIndex == -1) {
+                printf("NT não encontrado");
+                return;
+            }
+            replaceNT(nonTerminalIndex);
+
+            delete(&firstTable[index],list->token);
+            T_LIST* ntLine = firstTable[nonTerminalIndex];
+            while(ntLine){
+                //append(&firstTable[index],ntLine->token);
+                append(&firstTable[index],newToken(ntLine->token->value,ntLine->token->type));
+                ntLine = ntLine->next;
+            }
+        }
+        list = list->next;
+    }
+}
+
 void fillFirstTable(int quant_NT){
     int i =0;
     for(i=0;i<LMAXTOKEN;i++){
@@ -210,11 +245,20 @@ void fillFirstTable(int quant_NT){
     }
 
     //Replaces all NT for T
-    //delete(&firstTable[14],newToken("rop","rop"));
+    for(i=0;i<quant_NT;i++){
+        replaceNT(i);
+
+        //delete(&firstTable[i],newToken("epsilon","epsilon"));
+        // T_LIST* l = firstTable[i];
+        // printf("%s: ",NONTERMINALS[i]);
+        // while(l){
+        //     printf("%s ",l->token->type);
+        //     l = l->next;
+        // }
+        // printf("\n");
+    }
 
     for(i=0;i<quant_NT;i++){
-        delete(&firstTable[i],newToken("epsilon","epsilon"));
-
         T_LIST* l = firstTable[i];
         printf("%s: ",NONTERMINALS[i]);
         while(l){
