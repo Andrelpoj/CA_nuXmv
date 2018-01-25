@@ -1,9 +1,5 @@
 #define LMAXTOKEN 255
 
-//#define THEIGHT 18
-//#define TWIDTH 29
-#define TDEPTH 20
-
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -76,15 +72,21 @@ int tkncmp(Token* t1, Token* t2){
     if(!strcmp(t1->value,t2->value) && !strcmp(t1->type,t2->type)){
         return 1;
     }
-    //return 0;
+    return 0;
 }
 
 void delete(T_LIST** list, Token* t){
+    if(list == NULL) return;
+    if(*list == NULL) return;
+    if(t == NULL) return;
+
     T_LIST* p1 = *list;
     T_LIST* p2;
 
     //printf("type: %s",p1->token->type);
+
     if(tkncmp(t,p1->token)){
+        printf("deletando: %s\n",p1->token->value);
         *list = p1->next;
         free(p1);
     }
@@ -92,7 +94,10 @@ void delete(T_LIST** list, Token* t){
         while(p1){
             p2 = p1;
             p1 = p1->next;
+
+            if(!p1) break;
             if(tkncmp(t,p1->token)){
+                printf("deletando: %s\n",p1->token->value);
                 p2->next = p1->next;
                 free(p1);
                 break;
@@ -205,9 +210,12 @@ void fillFirstTable(int quant_NT){
     }
 
     //Replaces all NT for T
+    //delete(&firstTable[14],newToken("rop","rop"));
+
     for(i=0;i<quant_NT;i++){
+        delete(&firstTable[i],newToken("epsilon","epsilon"));
+
         T_LIST* l = firstTable[i];
-        //delete(&firstTable[i],newToken("rop","rop"));
         printf("%s: ",NONTERMINALS[i]);
         while(l){
             printf("%s ",l->token->type);
@@ -414,6 +422,42 @@ Token** createTable(char* orig){
 
 int main(int argc, char *argv[]) {
     Token** grid = createTable("rules.txt");
+
+
+    // T_LIST* table[3];
+    // table[0] = NULL;
+    // table[1] = NULL;
+    // table[2] = NULL;
+    //
+    //
+    // Token* t = newToken("CA","CA");
+    // append(&table[0],t);
+    // t = newToken("STATES","STATES");
+    // append(&table[0],t);
+    // t = newToken("INITIAL","INITIAL");
+    // append(&table[0],t);
+    //
+    // T_LIST* temp = table[0];
+    // while(temp){
+    //     printf("value: %s type: %s\n",temp->token->value,temp->token->type);
+    //     temp = temp->next;
+    // }
+    //
+    // printf("\n\n\n");
+    //
+    // delete(&table[0],t);
+    // delete(&table[0],newToken("CA","CA"));
+    // delete(&table[0],newToken("STATES","STATES"));
+    //
+    // temp = table[0];
+    // while(temp){
+    //     printf("value: %s type: %s\n",temp->token->value,temp->token->type);
+    //     temp = temp->next;
+    // }
+
+
+
+
 
     /*FILE *ca, *out = stdout;
     if(argc == 1) {
