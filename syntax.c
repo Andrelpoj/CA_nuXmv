@@ -68,6 +68,17 @@ void append(T_LIST** list, Token* t){
     }
 }
 
+void insert(T_LIST** list, Token* token){
+    T_LIST* temp = *list;
+    int exists=0;
+
+    while(temp && !exists){
+        if((tkncmp(temp->token,token))) exists = 1;
+        temp = temp->next;
+    }
+    if(!exists) append(list,token);
+}
+
 int tkncmp(Token* t1, Token* t2){
     if(!strcmp(t1->value,t2->value) && !strcmp(t1->type,t2->type)){
         return 1;
@@ -86,7 +97,7 @@ void delete(T_LIST** list, Token* t){
     //printf("type: %s",p1->token->type);
 
     if(tkncmp(t,p1->token)){
-        printf("deletando: %s\n",p1->token->value);
+        //printf("deletando: %s\n",p1->token->value);
         *list = p1->next;
         free(p1);
     }
@@ -97,7 +108,7 @@ void delete(T_LIST** list, Token* t){
 
             if(!p1) break;
             if(tkncmp(t,p1->token)){
-                printf("deletando: %s\n",p1->token->value);
+                //printf("deletando: %s\n",p1->token->value);
                 p2->next = p1->next;
                 free(p1);
                 break;
@@ -199,9 +210,83 @@ int findNonTerminalIndex(char type[LMAXTOKEN]){
     return -1;
 }
 
+int findTerminalIndex(char type[LMAXTOKEN]){
+    int i=0;
+    while(strlen(TERMINALS[i])!=0){
+        if(strcmp(TERMINALS[i], type) == 0){
+            return i;
+        }
+        i++;
+    }
+    return -1;
+}
+
+void nextNT(int index,int* rightSideNT, int size){
+    //procura regras da forma:
+    //index : vetor[0] vetor[1] ... vetor[n] X Y
+    //adiciona X ao first de index
+    printf("Index: %s,",NONTERMINALS[index]);
+    int j;
+    for(j=0;j<size;j++){
+        printf(" %s |",NONTERMINALS[ rightSideNT[j] ]);
+    }
+    printf("Size: %d\n",size);
+
+
+    R_LIST* r = RULES;
+    while(r){
+        T_LIST* list = r->rule;
+        if (strcmp(NONTERMINALS[index],list->token->type) == 0){
+            list = list->next->next; //pula o ':'
+
+            int flag = 0;
+            int i = 0;
+            for(i=0;i<size;i++){
+                if(strcmp(NONTERMINALS[ rightSideNT[i] ],list->token->type) == 0){
+                    list = list->next;
+                    if(!list) break;
+                }
+                else{
+                    flag = 1;
+                    break;
+                }
+            }
+
+
+            if((flag == 0)&&(list)){
+                //insert(&firstTable[index],newToken(list->token->value,list->token->type));
+                printf("OLHA: %s\n",list->token->type);
+
+                if(isNonTerminal(list->token->type)){
+                    int nonTerminalIndex = findNonTerminalIndex(list->token->type);
+                    if(nonTerminalIndex == -1) {
+                        printf("NT não encontrado");
+                        return;
+                    }
+                    //replaceNT();
+                    rightSideNT[size] = nonTerminalIndex;
+
+                    nextNT(index,rightSideNT,size+1);
+                }
+                else{
+                    if(isTerminal(list->token->type)){
+                        insert(&firstTable[index],newToken(list->token->value,list->token->type));
+                        //append(&(firstTable[index]),newToken(list->token->value,list->token->value));
+                     }
+                }
+            }
+
+        }
+        r = r->next;
+    }
+}
+
 void replaceNT(int index){
     T_LIST* list = firstTable[index];
     int nonTerminalIndex;
+
+    Token* epsilon = newToken("epsilon","epsilon");
+
     while(list){
         if(isNonTerminal(list->token->type)){
             nonTerminalIndex = findNonTerminalIndex(list->token->type);
@@ -214,8 +299,32 @@ void replaceNT(int index){
             delete(&firstTable[index],list->token);
             T_LIST* ntLine = firstTable[nonTerminalIndex];
             while(ntLine){
-                //append(&firstTable[index],ntLine->token);
-                append(&firstTable[index],newToken(ntLine->token->value,ntLine->token->type));
+                // if(tkncmp(ntLine->token,newToken("epsilon","epsilon"))){
+                //     int novo = nextNT(index,nonTerminalIndex);
+                //     newLine = firstTable[novo];
+                //
+                //     while(newLine){
+                //         if(tkncmp(newLine->token,newToken("epsilon","epsilon"))
+                //             ...
+                //     }
+                // }
+
+                if(tkncmp(ntLine->token,epsilon)){
+                    /*
+                    T_LIST* rightSideNT = NULL;
+                    Token* newNT = newToken(NONTERMINALS[nonTerminalIndex],NONTERMINALS[nonTerminalIndex]));
+                    append(&rightSideNT,newNT);
+                    */
+                    int rightSideNT[LMAXTOKEN];
+                    rightSideNT[0] = nonTerminalIndex;
+                    int size = 1;
+                    nextNT(index,rightSideNT,size);
+                }
+                else{
+
+                    insert(&firstTable[index],newToken(ntLine->token->value,ntLine->token->type));
+                    //append(&firstTable[index],newToken(ntLine->token->value,ntLine->token->type));
+                }
                 ntLine = ntLine->next;
             }
         }
@@ -237,8 +346,8 @@ void fillFirstTable(int quant_NT){
             if (strcmp(NONTERMINALS[i],list->token->type) == 0){
                 list = list->next->next; //pula o ':'
 
-                //append(&(firstTable[i]),list->token);
-                append(&(firstTable[i]),newToken(list->token->value,list->token->type));
+                insert(&firstTable[i],newToken(list->token->value,list->token->type));
+                //append(&(firstTable[i]),newToken(list->token->value,list->token->value));
             }
             r = r->next;
         }
@@ -247,17 +356,9 @@ void fillFirstTable(int quant_NT){
     //Replaces all NT for T
     for(i=0;i<quant_NT;i++){
         replaceNT(i);
-
-        //delete(&firstTable[i],newToken("epsilon","epsilon"));
-        // T_LIST* l = firstTable[i];
-        // printf("%s: ",NONTERMINALS[i]);
-        // while(l){
-        //     printf("%s ",l->token->type);
-        //     l = l->next;
-        // }
-        // printf("\n");
     }
 
+    /*
     for(i=0;i<quant_NT;i++){
         T_LIST* l = firstTable[i];
         printf("%s: ",NONTERMINALS[i]);
@@ -267,35 +368,8 @@ void fillFirstTable(int quant_NT){
         }
         printf("\n");
     }
-    //return firstTable;
+    */
 }
-
-/*
-T_LIST* first(char type[LMAXTOKEN]){
-    T_LIST* list = NULL;
-    if(isTerminal(type)){
-        append(&list,newToken(type,type));
-        return list;
-    }
-    else{
-        R_LIST* r = RULES;
-        while(r){
-            T_LIST* temp = r->rule;
-            if (strcmp(type,temp->token->type) == 0){
-                temp = temp->next->next; //pula o ':'
-
-                temp = first(temp->token->type);
-                while(temp){
-                    //append(&list,temp->token);
-                    append(&list,newToken(temp->token->value,temp->token->type));
-                    temp = temp->next;
-                }
-            }
-            r = r->next;
-        }
-        return list;
-    }
-}*/
 
 Token** createTable(char* orig){
 
@@ -356,27 +430,9 @@ Token** createTable(char* orig){
     }
     */
 
-    /*
-    Token* t = newToken("CA","T");
-    //T_LIST* l = newList(t);  //Deixo a criacao da lista dessa forma?
-    T_LIST* l = NULL;
-    t = newToken("states","NT");
-    append(&l,t);
-    t = newToken("istates","NT");
-    append(&l,t);
-
-    T_LIST* list = l;
-    while(list){
-        printf("value: %s,type: %s\n",list->token->value, list->token->type);
-        list = list->next;
-    }
-    */
-
     while ( fgets (temp , LMAXTOKEN , arq) != NULL ) {
 //      printf("%d",strlen(temp));
 //      printf("%s\n",temp);
-
-
         char *tkn = strtok(temp," ");
         T_LIST* rule = NULL;
 
@@ -432,32 +488,18 @@ Token** createTable(char* orig){
     }
     */
 
-    /*
-    T_LIST* firstTable[quant_NT];
-    T_LIST* followTable[quant_NT];
-    for(i=0;i<quant_NT;i++){
-        firstTable[i] = NULL;
-        followTable[i] = NULL;
-    }
-    */
-
     fillFirstTable(quant_NT);
 
-
-    //firstTable = createFirstTable(quant_NT);
-
-
-    /*
     for(i=0;i<quant_NT;i++){
         T_LIST* list = firstTable[i];
-        printf("%s\n",NONTERMINALS[i]);
+        printf("%s: ",NONTERMINALS[i]);
         while(list){
-            printf("%s\n",list->token->type);
+            printf("%s ",list->token->type);
             list = list->next;
         }
         printf("\n");
     }
-    */
+
 
     fclose(arq);
     return NULL;
@@ -465,7 +507,7 @@ Token** createTable(char* orig){
 }
 
 int main(int argc, char *argv[]) {
-    Token** grid = createTable("rules.txt");
+    Token** grid = createTable("regras.txt");
 
 
     // T_LIST* table[3];
