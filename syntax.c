@@ -68,6 +68,13 @@ void append(T_LIST** list, Token* t){
     }
 }
 
+int tkncmp(Token* t1, Token* t2){
+    if(!strcmp(t1->value,t2->value) && !strcmp(t1->type,t2->type)){
+        return 1;
+    }
+    return 0;
+}
+
 void insert(T_LIST** list, Token* token){
     T_LIST* temp = *list;
     int exists=0;
@@ -77,13 +84,6 @@ void insert(T_LIST** list, Token* token){
         temp = temp->next;
     }
     if(!exists) append(list,token);
-}
-
-int tkncmp(Token* t1, Token* t2){
-    if(!strcmp(t1->value,t2->value) && !strcmp(t1->type,t2->type)){
-        return 1;
-    }
-    return 0;
 }
 
 void delete(T_LIST** list, Token* t){
@@ -225,13 +225,17 @@ void nextNT(int index,int* rightSideNT, int size){
     //procura regras da forma:
     //index : vetor[0] vetor[1] ... vetor[n] X Y
     //adiciona X ao first de index
+	
+    Token* epsilon = newToken("epsilon","epsilon");
+	
+	/*
     printf("Index: %s,",NONTERMINALS[index]);
     int j;
     for(j=0;j<size;j++){
         printf(" %s |",NONTERMINALS[ rightSideNT[j] ]);
     }
     printf("Size: %d\n",size);
-
+	*/
 
     R_LIST* r = RULES;
     while(r){
@@ -252,10 +256,20 @@ void nextNT(int index,int* rightSideNT, int size){
                 }
             }
 
+            //Case:
+            //A : BC
+            //B : b | epsilon
+            //C : c | epsilon
+            //so we must add epsilon to First(A)
+            if((flag == 0)&&(!list)&&(i==size))
+                insert(&firstTable[index],newToken("epsilon","epsilon"));
 
+
+            //other cases
             if((flag == 0)&&(list)){
                 //insert(&firstTable[index],newToken(list->token->value,list->token->type));
-                printf("OLHA: %s\n",list->token->type);
+                
+				//printf("OLHA: %s\n",list->token->type);
 
                 if(isNonTerminal(list->token->type)){
                     int nonTerminalIndex = findNonTerminalIndex(list->token->type);
@@ -263,9 +277,19 @@ void nextNT(int index,int* rightSideNT, int size){
                         printf("NT não encontrado");
                         return;
                     }
-                    //replaceNT();
-                    rightSideNT[size] = nonTerminalIndex;
+                    
+					//replaceNT();
+                    //deveria chamar replaceNT nao nextNT
+                    T_LIST* ntLine = firstTable[nonTerminalIndex];
+		            while(ntLine){
+		                if(!(tkncmp(ntLine->token,epsilon))){
+		                    insert(&firstTable[index],newToken(ntLine->token->value,ntLine->token->type));
+		                    //append(&firstTable[index],newToken(ntLine->token->value,ntLine->token->type));
+		                }
+		                ntLine = ntLine->next;
+		            }
 
+                    rightSideNT[size] = nonTerminalIndex;
                     nextNT(index,rightSideNT,size+1);
                 }
                 else{
@@ -299,29 +323,13 @@ void replaceNT(int index){
             delete(&firstTable[index],list->token);
             T_LIST* ntLine = firstTable[nonTerminalIndex];
             while(ntLine){
-                // if(tkncmp(ntLine->token,newToken("epsilon","epsilon"))){
-                //     int novo = nextNT(index,nonTerminalIndex);
-                //     newLine = firstTable[novo];
-                //
-                //     while(newLine){
-                //         if(tkncmp(newLine->token,newToken("epsilon","epsilon"))
-                //             ...
-                //     }
-                // }
-
                 if(tkncmp(ntLine->token,epsilon)){
-                    /*
-                    T_LIST* rightSideNT = NULL;
-                    Token* newNT = newToken(NONTERMINALS[nonTerminalIndex],NONTERMINALS[nonTerminalIndex]));
-                    append(&rightSideNT,newNT);
-                    */
                     int rightSideNT[LMAXTOKEN];
                     rightSideNT[0] = nonTerminalIndex;
                     int size = 1;
                     nextNT(index,rightSideNT,size);
                 }
                 else{
-
                     insert(&firstTable[index],newToken(ntLine->token->value,ntLine->token->type));
                     //append(&firstTable[index],newToken(ntLine->token->value,ntLine->token->type));
                 }
