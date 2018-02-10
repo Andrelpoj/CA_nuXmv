@@ -1,4 +1,6 @@
 #define LMAXTOKEN 255
+#define ENDSYMBOL "$"
+#define EPSILON epsilon
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -30,13 +32,6 @@ typedef struct RulesList{
     struct RulesList* next;
 }R_LIST;
 
-//Global definitions
-char NONTERMINALS[LMAXTOKEN][LMAXTOKEN];
-char TERMINALS[LMAXTOKEN][LMAXTOKEN];
-R_LIST* RULES = NULL;
-T_LIST* firstTable[LMAXTOKEN];
-T_LIST* followTable[LMAXTOKEN];
-
 Token* newToken(char value[LMAXTOKEN], char type[LMAXTOKEN]){
     Token* t = (Token*) malloc(sizeof(Token));
     strcpy(t->value,value);
@@ -52,6 +47,14 @@ T_LIST* newList(Token* t){
     listNode->next = NULL;
     return listNode;
 }
+
+//Global definitions
+char NONTERMINALS[LMAXTOKEN][LMAXTOKEN];
+char TERMINALS[LMAXTOKEN][LMAXTOKEN];
+R_LIST* RULES = NULL;
+T_LIST* firstTable[LMAXTOKEN];
+T_LIST* followTable[LMAXTOKEN];
+Token* endSymbol;
 
 void append(T_LIST** list, Token* t){
     if(!t) return;
@@ -75,7 +78,10 @@ int tkncmp(Token* t1, Token* t2){
     return 0;
 }
 
-void insert(T_LIST** list, Token* token){
+int insert(T_LIST** list, Token* token){
+	//returns 1 if the token was inserted
+	//returns 0 if nothing changed
+	
     T_LIST* temp = *list;
     int exists=0;
 
@@ -83,7 +89,14 @@ void insert(T_LIST** list, Token* token){
         if((tkncmp(temp->token,token))) exists = 1;
         temp = temp->next;
     }
-    if(!exists) append(list,token);
+    
+    if(!exists){
+		append(list,token);
+    	return 1;
+    }
+    else{
+    	return 0;
+    }
 }
 
 void delete(T_LIST** list, Token* t){
@@ -174,7 +187,6 @@ Token* findType(char value[LMAXTOKEN]){
         }
         i++;
     }
-
 }
 
 int isTerminal(char type[LMAXTOKEN]){
@@ -383,6 +395,115 @@ void fillFirstTable(int quant_NT){
     */
 }
 
+void fillFollowTable(int quant_NT){
+	int i = 0;
+    for(i=0;i<LMAXTOKEN;i++){
+        followTable[i] = NULL;
+    }
+	
+	R_LIST* r = NULL;
+	T_LIST* list = NULL;
+	T_LIST* symbol = NULL;
+	T_LIST* temp = NULL;
+	int orig, dest, index;
+	int changed = 1;
+	int ins = 0;
+	
+	Token* epsilon = newToken("epsilon","epsilon");
+	int hasEpsilon = 0;
+	
+	//inserts the endSymbol in Follow of the first symbol(left side) of the first rule
+	r = RULES;
+	list = r->rule;
+	index = findNonTerminalIndex(list->token->type);
+	insert(&followTable[index],newToken(endSymbol->value,endSymbol->type));			
+	
+	
+	while(changed){
+		r = RULES;
+		changed = 0;
+		while(r){
+			list = r->rule;
+			
+			//saves the index of the left side of the rule symbol
+			index = findNonTerminalIndex(list->token->type);
+			list = list->next;
+			
+			while(list){
+				if(isNonTerminal(list->token->type)){
+					
+					//tests if the symbol is not the last one
+					if(list->next){
+						symbol = list->next;
+						
+						do{
+							dest = findNonTerminalIndex(list->token->type);
+							orig = findNonTerminalIndex(symbol->token->type);
+							
+							if(orig!=-1){
+								temp = firstTable[orig];
+								hasEpsilon = 0;
+								while(temp){
+									if(tkncmp(temp->token,epsilon)){
+										hasEpsilon = 1;
+									}
+									else{
+										ins = insert(&followTable[dest],newToken(temp->token->value,temp->token->type));
+										changed = changed || ins;					
+									}
+									temp = temp->next;
+								}
+								
+								if((!symbol->next)&&(hasEpsilon)){
+									temp = followTable[index];
+									while(temp){
+										ins = insert(&followTable[dest],newToken(temp->token->value,temp->token->type));	
+										changed = changed || ins;
+										
+										temp = temp->next;				
+									}	
+								}
+								
+							}
+							else{
+								//if the symbol is not a non terminal gets the index from terminals
+								orig = findTerminalIndex(symbol->token->type);
+								
+								if(orig==-1){
+									printf("Erro, símbolo não permitido usado na regra");
+									return;
+								}
+								
+								ins = insert(&followTable[dest],newToken(symbol->token->value,symbol->token->type));
+								changed = changed || ins;
+							}
+							
+							symbol = symbol->next;
+						}while((symbol)&&(hasEpsilon));
+						
+					}
+					
+					//Case:
+					// A -> B
+					if(!list->next){
+						dest = findNonTerminalIndex(list->token->type);
+						
+						temp = followTable[index];
+						while(temp){
+							ins = insert(&followTable[dest],newToken(temp->token->value,temp->token->type));	
+							changed = changed || ins;
+							
+							temp = temp->next;				
+						}
+					}		
+				}
+				list = list->next;
+			}
+			r = r->next;
+		}
+	}
+}
+
 Token** createTable(char* orig){
 
     FILE *arq = fopen(orig,"r");
@@ -524,7 +645,20 @@ Token** createTable(char* orig){
     }
     printf("\n*****************\n");
 
+	fillFollowTable(quant_NT);
 	
+	printf("\n\n\n");
+	printf("FOLLOW TABLE\n*****************\n");
+    for(i=0;i<quant_NT;i++){
+        T_LIST* list = followTable[i];
+        printf("%s: ",NONTERMINALS[i]);
+        while(list){
+            printf("%s ",list->token->type);
+            list = list->next;
+        }
+        printf("\n");
+    }
+    printf("\n*****************\n");
 
 
 
@@ -534,7 +668,9 @@ Token** createTable(char* orig){
 }
 
 int main(int argc, char *argv[]) {
-    Token** grid = createTable("regras.txt");
+	endSymbol = newToken(ENDSYMBOL,ENDSYMBOL);
+	
+    Token** grid = createTable("rules.txt");
 
 
     // T_LIST* table[3];
