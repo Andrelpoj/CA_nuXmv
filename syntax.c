@@ -52,6 +52,7 @@ T_LIST* newList(Token* t){
 char NONTERMINALS[LMAXTOKEN][LMAXTOKEN];
 char TERMINALS[LMAXTOKEN][LMAXTOKEN];
 R_LIST* RULES = NULL;
+R_LIST* parsingTable[LMAXTOKEN][LMAXTOKEN];
 T_LIST* firstTable[LMAXTOKEN];
 T_LIST* followTable[LMAXTOKEN];
 Token* endSymbol;
@@ -127,6 +128,30 @@ void delete(T_LIST** list, Token* t){
                 break;
             }
         }
+    }
+}
+
+R_LIST* newRule(T_LIST* rule){
+	if(!rule) return NULL;
+	
+	R_LIST* list = (R_LIST*) malloc(sizeof(R_LIST));
+    list->rule = rule;
+    list->next = NULL;
+    return list;
+}
+
+void append_rule(R_LIST** list, T_LIST* rule){
+    if(!rule) return;
+    
+    if(! *list){
+        *list = newRule(rule);
+    }
+    else{
+        R_LIST* r = *list;
+        while(r->next){
+            r = r->next;
+        }
+        r->next = newRule(rule);
     }
 }
 
@@ -504,6 +529,96 @@ void fillFollowTable(int quant_NT){
 	}
 }
 
+
+void fillParsingTable(int quant_NT, int quant_T){
+    T_LIST *first, *follow, *temp;
+    Token* epsilon = newToken("epsilon","epsilon");
+    R_LIST* r = NULL;
+    T_LIST* list = NULL;
+    int i=0, j=0, flag=0, hasEpsilon = 0;
+    
+    for(i=0;i<LMAXTOKEN;i++){
+        for(j=0;j<LMAXTOKEN;j++){
+		parsingTable[i][j] = NULL;	
+		}
+    }
+    
+	r = RULES;
+    while(r){
+        list = r->rule;
+        i = findNonTerminalIndex(list->token->type);
+		list = list->next;
+		
+        if(isNonTerminal(list->token->type)){
+        	do{
+		    	//CASE: A -> B
+		    	//      B -> epsilon	
+		    	if(!list){
+		    		follow = followTable[i];
+				
+					while(follow){
+						if(tkncmp(follow->token,endSymbol)){
+							//j = findTerminalIndex(epsilon);
+							j = quant_T - 1;
+						}
+						else{
+							j = findTerminalIndex(list->token->type);	
+						}
+						
+						//insere a regra
+						append_rule(&(parsingTable[i][j]), r->rule);
+						
+						follow = follow->next;
+					}
+				}
+				else{
+					hasEpsilon = 0;
+					first = firstTable[ findNonTerminalIndex(list->token->type) ];
+					while(first){
+			    		if(tkncmp(first->token,epsilon)){
+			    			hasEpsilon = 1;
+			    			list = list->next;
+						}
+						else{
+							j = findTerminalIndex(first->token->type);
+							
+							//insere a regra
+							append_rule(&(parsingTable[i][j]), r->rule);
+						}
+						first = first->next;
+					}	
+				}
+			}while(hasEpsilon);
+		}
+		else{
+			if(tkncmp(list->token,epsilon)){
+				follow = followTable[i];
+				
+				while(follow){
+					if(tkncmp(follow->token,endSymbol)){
+						//j = findTerminalIndex(epsilon);
+						j = quant_T - 1;
+					}
+					else{
+						j = findTerminalIndex(list->token->type);	
+					}
+					//insere a regra
+					append_rule(&(parsingTable[i][j]), r->rule);
+						
+					follow = follow->next;
+				}
+			}
+			else{
+				j = findTerminalIndex(list->token->type);
+				
+				//insere a regra
+				append_rule(&(parsingTable[i][j]), r->rule);		
+			}
+		}
+		r = r->next;
+    }
+}
+
 Token** createTable(char* orig){
 
     FILE *arq = fopen(orig,"r");
@@ -516,7 +631,7 @@ Token** createTable(char* orig){
     char var[10] = "VAR";
     int quant_T = 0;
     int quant_NT = 0;
-    int i;
+    int i,j;
 
     for(i=0;i<LMAXTOKEN;i++){
         sprintf(TERMINALS[i],"%s","");
@@ -530,15 +645,18 @@ Token** createTable(char* orig){
         fscanf(arq,"%s\n",&temp);
         i++;
     }
-    quant_T = i;
 
-    /*
+    //Adds epsilon to the Terminals
+    sprintf(TERMINALS[i],"%s","epsilon");
+    i++;
+    quant_T = i;
+    
     i = 0;
     while(strlen(TERMINALS[i])!=0){
         printf("%s\n",TERMINALS[i]);
         i++;
     }
-    */
+    
 
     for(i=0;i<LMAXTOKEN;i++){
         sprintf(NONTERMINALS[i],"%s","");
@@ -660,6 +778,28 @@ Token** createTable(char* orig){
     }
     printf("\n*****************\n");
 
+    
+	fillParsingTable(quant_NT,quant_T);
+	
+	printf("\n\n\n");
+	printf("PARSING TABLE\n*****************\n");
+	for(i=0;i<quant_NT;i++){
+        printf("%s: ",NONTERMINALS[i]);
+		for(j=0;j<quant_T;j++){
+			printf("| ");
+        	R_LIST* list = parsingTable[i][j];
+	        while(list){
+	            T_LIST* rule = list->rule;
+	            while(rule){
+	            	printf("%s ",rule->token->type);
+	            	rule = rule->next;
+				}
+	            list = list->next;
+	        }	
+		}
+		printf("\n");
+    }
+    printf("\n*****************\n");
 
 
     fclose(arq);
