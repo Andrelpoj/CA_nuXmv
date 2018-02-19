@@ -52,7 +52,8 @@ T_LIST* newList(Token* t){
 char NONTERMINALS[LMAXTOKEN][LMAXTOKEN];
 char TERMINALS[LMAXTOKEN][LMAXTOKEN];
 R_LIST* RULES = NULL;
-R_LIST* parsingTable[LMAXTOKEN][LMAXTOKEN];
+//R_LIST* parsingTable[LMAXTOKEN][LMAXTOKEN];
+int parsingTable[LMAXTOKEN][LMAXTOKEN];
 T_LIST* firstTable[LMAXTOKEN];
 T_LIST* followTable[LMAXTOKEN];
 Token* endSymbol;
@@ -530,21 +531,22 @@ void fillFollowTable(int quant_NT){
 }
 
 
-void fillParsingTable(int quant_NT, int quant_T){
+void fillParsingTable(int quant_T){
     T_LIST *first, *follow, *temp;
     Token* epsilon = newToken("epsilon","epsilon");
     R_LIST* r = NULL;
     T_LIST* list = NULL;
-    int i=0, j=0, flag=0, hasEpsilon = 0;
+    int i=0, j=0, flag=0, hasEpsilon = 0, cont = 0;
     
     for(i=0;i<LMAXTOKEN;i++){
         for(j=0;j<LMAXTOKEN;j++){
-		parsingTable[i][j] = NULL;	
+		parsingTable[i][j] = 0;	
 		}
     }
     
 	r = RULES;
     while(r){
+    	cont++;
         list = r->rule;
         i = findNonTerminalIndex(list->token->type);
 		list = list->next;
@@ -562,11 +564,11 @@ void fillParsingTable(int quant_NT, int quant_T){
 							j = quant_T - 1;
 						}
 						else{
-							j = findTerminalIndex(list->token->type);	
+							j = findTerminalIndex(follow->token->type);	
 						}
 						
-						//insere a regra
-						append_rule(&(parsingTable[i][j]), r->rule);
+						//append_rule(&(parsingTable[i][j]), r->rule);
+						parsingTable[i][j] = cont;
 						
 						follow = follow->next;
 					}
@@ -582,8 +584,8 @@ void fillParsingTable(int quant_NT, int quant_T){
 						else{
 							j = findTerminalIndex(first->token->type);
 							
-							//insere a regra
-							append_rule(&(parsingTable[i][j]), r->rule);
+							//append_rule(&(parsingTable[i][j]), r->rule);
+							parsingTable[i][j] = cont;
 						}
 						first = first->next;
 					}	
@@ -592,6 +594,7 @@ void fillParsingTable(int quant_NT, int quant_T){
 		}
 		else{
 			if(tkncmp(list->token,epsilon)){
+				printf("%s \n",NONTERMINALS[i]);
 				follow = followTable[i];
 				
 				while(follow){
@@ -600,19 +603,19 @@ void fillParsingTable(int quant_NT, int quant_T){
 						j = quant_T - 1;
 					}
 					else{
-						j = findTerminalIndex(list->token->type);	
+						j = findTerminalIndex(follow->token->type);	
 					}
-					//insere a regra
-					append_rule(&(parsingTable[i][j]), r->rule);
-						
+					//append_rule(&(parsingTable[i][j]), r->rule);
+					parsingTable[i][j] = cont;	
+					
 					follow = follow->next;
 				}
 			}
 			else{
 				j = findTerminalIndex(list->token->type);
 				
-				//insere a regra
-				append_rule(&(parsingTable[i][j]), r->rule);		
+				//append_rule(&(parsingTable[i][j]), r->rule);
+				parsingTable[i][j] = cont;		
 			}
 		}
 		r = r->next;
@@ -779,23 +782,14 @@ Token** createTable(char* orig){
     printf("\n*****************\n");
 
     
-	fillParsingTable(quant_NT,quant_T);
+	fillParsingTable(quant_T);
 	
 	printf("\n\n\n");
 	printf("PARSING TABLE\n*****************\n");
 	for(i=0;i<quant_NT;i++){
         printf("%s: ",NONTERMINALS[i]);
 		for(j=0;j<quant_T;j++){
-			printf("| ");
-        	R_LIST* list = parsingTable[i][j];
-	        while(list){
-	            T_LIST* rule = list->rule;
-	            while(rule){
-	            	printf("%s ",rule->token->type);
-	            	rule = rule->next;
-				}
-	            list = list->next;
-	        }	
+			printf("| %d",parsingTable[i][j]);
 		}
 		printf("\n");
     }
