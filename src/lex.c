@@ -7,12 +7,12 @@
 #define NOPERATORS2 5
 #define LOPERATORS2 4
 #define LMAXTOKEN 255
- 
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
 #include<ctype.h>
-  
+ 
 int isKeyword(char buffer[]) {
     char keywords[NKEYWORDS][LKEYWORDS] = KEYWORDS;
     int i;
@@ -20,7 +20,7 @@ int isKeyword(char buffer[]) {
         if(strcmp(keywords[i], buffer) == 0) return 1;
     return 0;
 }
- 
+
 int isOperator(char buffer) {
     char operators[NOPERATORS] = OPERATORS;
     int i;
@@ -28,7 +28,7 @@ int isOperator(char buffer) {
         if(operators[i] == buffer) return 1;
     return 0;
 }
- 
+
 int isOperator2(char buffer[]) {
     char operators2[NOPERATORS2][LOPERATORS2] = OPERATORS2;
     int i;
@@ -36,7 +36,7 @@ int isOperator2(char buffer[]) {
         if(strcmp(operators2[i], buffer) == 0) return 1;
     return 0;
 }
- 
+
 int write(char buffer[], FILE *out, int isNumber, int isID, int isOp) {
     if(isOp && isOperator2(buffer)) fprintf(out, "%s %s\n", buffer, buffer);
     else if(isOp && isOperator(buffer[0])) fprintf(out, "%c %c\n", buffer[0], buffer[0]);
@@ -46,7 +46,7 @@ int write(char buffer[], FILE *out, int isNumber, int isID, int isOp) {
     else return 0;
     return 1;
 }
-  
+ 
 int main(int argc, char *argv[]) {
     char ch, buffer[LMAXTOKEN];
     FILE *ca, *out = stdout;
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     int isID = 0;
     int isOp = 0;
     unsigned int line =0;
-     
+    
     if(argc == 1) {
         printf("usage: %s input_file [output_file]\n", argv[0]);
         return 0;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
             return 2;
         }
     }
-     
+    
     while((ch = fgetc(ca)) != EOF) {
            line++;
            if(isspace(ch) || isblank(ch)) {
@@ -84,8 +84,8 @@ int main(int argc, char *argv[]) {
                    }
                    j = isNumber = isID = isOp = 0;
                }
-       }
-       else if((isNumber || j == 0) && isdigit(ch)) {
+	   }
+	   else if((isNumber || j == 0) && isdigit(ch)) {
                buffer[j++] = ch;
                isNumber = 1;
            }

@@ -1,0 +1,5 @@
+CA ca1
+STATES state1
+INITIAL STATES state1
+NAMES portA
+TRANSITIONS state1 : state1 (portA) [variavel]

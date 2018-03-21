@@ -1,0 +1,21 @@
+a
+b
+c
+d
+e
+:
+epsilon
+VAR
+A
+B
+C
+E
+RULES
+A : a
+A : B C E d
+B : b
+B : epsilon
+C : c
+C : epsilon
+E : e
+E : epsilon

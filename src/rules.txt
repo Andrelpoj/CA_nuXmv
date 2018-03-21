@@ -26,7 +26,6 @@ num
 !
 [
 ]
-$
 VAR
 ca
 states
@@ -65,7 +64,7 @@ rop : >
 rop : <
 rop : >=
 rop : <=
-rop : '='
+rop : =
 rop : !=
 aop : +
 aop : -
