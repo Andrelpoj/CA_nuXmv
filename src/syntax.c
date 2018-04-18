@@ -79,6 +79,7 @@ int parsingTable[LMAXTOKEN][LMAXTOKEN];
 T_LIST* firstTable[LMAXTOKEN];
 T_LIST* followTable[LMAXTOKEN];
 Token* endSymbol;
+Token* epsilon;
 Node* syntaxTree = NULL;
 
 void append(T_LIST** list, Token* t){
@@ -278,7 +279,7 @@ void nextNT(int index,int* rightSideNT, int size){
     //index : vetor[0] vetor[1] ... vetor[n] X Y
     //adiciona X ao first de index
 
-    Token* epsilon = newToken("epsilon","epsilon");
+    //Token* epsilon = newToken("epsilon","epsilon");
 
     /*
     printf("Index: %s,",NONTERMINALS[index]);
@@ -363,7 +364,7 @@ void replaceNT(int index){
     T_LIST* list = firstTable[index];
     int nonTerminalIndex;
 
-    Token* epsilon = newToken("epsilon","epsilon");
+    //Token* epsilon = newToken("epsilon","epsilon");
 
     while(list){
         if(isNonTerminal(list->token->type)){
@@ -449,7 +450,7 @@ void fillFollowTable(int quant_NT){
     int changed = 1;
     int ins = 0;
 
-    Token* epsilon = newToken("epsilon","epsilon");
+    //Token* epsilon = newToken("epsilon","epsilon");
     int hasEpsilon = 0;
 
     //inserts the endSymbol in Follow of the first symbol(left side) of the first rule
@@ -547,7 +548,7 @@ void fillFollowTable(int quant_NT){
 
 void fillParsingTable(int quant_T){
     T_LIST *first, *follow, *temp;
-    Token* epsilon = newToken("epsilon","epsilon");
+    //Token* epsilon = newToken("epsilon","epsilon");
     R_LIST* r = NULL;
     T_LIST* list = NULL;
     int i=0, j=0, flag=0, hasEpsilon = 0, cont = 0;
@@ -816,17 +817,30 @@ void createTable(char* orig){
 
 int main(int argc, char *argv[]) {
     endSymbol = newToken(ENDSYMBOL,ENDSYMBOL);
+    char epsilonStr[10] = "epsilon";
+    epsilon = newToken("epsilon","epsilon");
 
-    char epsilon[10] = "epsilon";
+    char rules_file[255], token_file[255];
+
+    if(argc == 3) {
+        sprintf(token_file,"%s",argv[1]);
+        sprintf(rules_file,"%s",argv[2]);
+        printf("%s ",token_file);
+        printf("%s\n",rules_file);
+    }
+    else{
+        printf("usage: %s token_file [rules_file]\n", argv[0]);
+        return 0;
+    }
 
     //Create First, Follow and Parsing Tables
-    createTable("rules.txt");
+    createTable(rules_file);
 
     Token* initial = newToken(NONTERMINALS[0],NONTERMINALS[0]);
     syntaxTree = newNode(NONTERMINALS[0]);
     T_STACK* stack = newStack(initial,syntaxTree);
 
-    FILE *arq = fopen("teste_resultado.txt","r");
+    FILE *arq = fopen(token_file,"r");
     if(arq == NULL){
         printf("error while opening file\n");
         return 1;
@@ -895,7 +909,7 @@ int main(int argc, char *argv[]) {
 					aux2 = aux2 ->next;
 				}
 				t = newToken(aux2->token->value,aux2->token->type);
-                if(strcmp(epsilon,t->type)!=0){ //doesn't include epsilon in the pile
+                if(strcmp(epsilonStr,t->type)!=0){ //doesn't include epsilon in the pile
     				push(&stack,t,tokenNode->node);
     				while(rule->next!=aux2){
     					while(aux1->next!=aux2){
@@ -935,7 +949,7 @@ int main(int argc, char *argv[]) {
             while(tokenNode && isNonTerminal(tokenNode->token->type)){
             //if(isNonTerminal(tokenNode->token->type)){
                 i = findNonTerminalIndex(tokenNode->token->type);
-                j = findTerminalIndex(epsilon);
+                j = findTerminalIndex(epsilonStr);
                 ruleIndex = parsingTable[i][j];
 
 				//There's no rule that satisfies it
@@ -958,7 +972,7 @@ int main(int argc, char *argv[]) {
 					aux2 = aux2 ->next;
 				}
 				t = newToken(aux2->token->value,aux2->token->type);
-                if(strcmp(epsilon,t->type)!=0){ //doesn't include epsilon in the pile
+                if(strcmp(epsilonStr,t->type)!=0){ //doesn't include epsilon in the pile
     				push(&stack,t,tokenNode->node);
     				while(rule->next!=aux2){
     					while(aux1->next!=aux2){
@@ -991,28 +1005,4 @@ int main(int argc, char *argv[]) {
 
     fclose(arq);
 
-
-
-
-    /*FILE *ca, *out = stdout;
-    if(argc == 1) {
-        printf("usage: %s input_file [output_file]\n", argv[0]);
-        return 0;
-    }
-    ca = fopen(argv[1], "r");
-    if(ca == NULL) {
-        printf("error while opening file %s\n", argv[1]);
-        return 2;
-    }
-    if(argc > 2) {
-        out = fopen(argv[2], "w");
-        if(out == NULL) {
-            printf("error while opening file %s\n", argv[2]);
-            return 2;
-        }
-    }
-    fclose(ca);
-    if(argc > 2) fclose(out);
-    return 0;
-    */
 }
