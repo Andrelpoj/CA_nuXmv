@@ -1,0 +1,10 @@
+MODULE main
+VAR
+    cs : {q0,p0,p1};
+    a : {NULL,0,1};
+    b : {NULL,0,1};
+ASSIGN
+    init(cs) := {q0};
+    init(a) := {NULL,0,1};
+    init(b) := {NULL,0,1};
+		next(cs) := case

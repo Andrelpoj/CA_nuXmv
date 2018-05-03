@@ -11,6 +11,11 @@ typedef struct node {
     struct node *child, *sibling;
 }Node;
 
+typedef struct NodeList {
+    Node* node;
+    struct NodeList* next;
+}N_LIST;
+
 typedef struct{
     char value[LMAXTOKEN];
     char type[LMAXTOKEN];
@@ -192,8 +197,8 @@ void push(T_STACK** root, Token* t, Node* n)
     *root = stackNode;
 }
 
-TokenNode* pop(T_STACK** root)
-{
+
+TokenNode* pop(T_STACK** root){
     if (isEmpty(*root)){
         return NULL;
         //Token t;
@@ -655,12 +660,12 @@ void createTable(char* orig){
         sprintf(TERMINALS[i],"%s","");
     }
 
-    fscanf(arq,"%s\n",&temp);
+    fscanf(arq,"%s\n", (char *) &temp);
     i = 0;
     while(strcmp(temp,var)){
         //printf("%s\n",temp);
         sprintf(TERMINALS[i],"%s",temp);
-        fscanf(arq,"%s\n",&temp);
+        fscanf(arq,"%s\n", (char *) &temp);
         i++;
     }
 
@@ -682,12 +687,12 @@ void createTable(char* orig){
     }
 
     sprintf(var,"%s","RULES");
-    fscanf(arq,"%s\n",&temp);
+    fscanf(arq,"%s\n", (char *) &temp);
     i = 0;
     while(strcmp(temp,var)){
         //printf("%s\n",temp);
         sprintf(NONTERMINALS[i],"%s",temp);
-        fscanf(arq,"%s\n",&temp);
+        fscanf(arq,"%s\n", (char *) &temp);
         i++;
     }
     quant_NT = i;
@@ -815,23 +820,67 @@ void createTable(char* orig){
     fclose(arq);
 }
 
-int main(int argc, char *argv[]) {
+void printTree(Node *s){
+    N_LIST *list1 = (N_LIST*) malloc(sizeof(N_LIST));
+    list1->node = s;
+    list1->next = NULL;
+
+    N_LIST *list2 = NULL;
+
+    Node *node;
+    N_LIST *aux1, *aux2;
+
+    while(list1){
+        node = list1->node;
+        printf("%s ",node->content);
+
+        //adds children to list2
+        node = node->child;
+        while(node){
+            if(!list2){
+                list2 = (N_LIST*) malloc(sizeof(N_LIST));
+                list2->node = node;
+                list2->next = NULL;
+            }
+            else{
+                aux2 = list2;
+                while(aux2->next){
+                    aux2 = aux2->next;
+                }
+                aux2->next = (N_LIST*) malloc(sizeof(N_LIST));
+                aux2->next->node = node;
+                aux2->next->next = NULL;
+            }
+            node = node->sibling;
+        }
+
+        aux1 = list1;
+        list1 = list1->next;
+        free(aux1);
+
+        //checks if list1 is empty and updates
+        if(!list1){
+            list1 = list2;
+            list2 = NULL;
+            //marks the end of the tree level
+            printf("\n");
+        }
+    }
+    printf("\n");
+}
+
+void addSibling(Node *node, Node* sibling){
+    if(!node) return;
+    while(node->sibling){
+        node = node->sibling;
+    }
+    node->sibling = sibling;
+}
+
+int generateSyntaxTree(char *rules_file,char *token_file) {
     endSymbol = newToken(ENDSYMBOL,ENDSYMBOL);
     char epsilonStr[10] = "epsilon";
     epsilon = newToken("epsilon","epsilon");
-
-    char rules_file[255], token_file[255];
-
-    if(argc == 3) {
-        sprintf(token_file,"%s",argv[1]);
-        sprintf(rules_file,"%s",argv[2]);
-        printf("%s ",token_file);
-        printf("%s\n",rules_file);
-    }
-    else{
-        printf("usage: %s token_file [rules_file]\n", argv[0]);
-        return 0;
-    }
 
     //Create First, Follow and Parsing Tables
     createTable(rules_file);
@@ -842,7 +891,7 @@ int main(int argc, char *argv[]) {
 
     FILE *arq = fopen(token_file,"r");
     if(arq == NULL){
-        printf("error while opening file\n");
+        printf("error while opening file!\n");
         return 1;
     }
 
@@ -851,47 +900,60 @@ int main(int argc, char *argv[]) {
     int i, j, k, ruleIndex, flag;
 	Token *currentToken, *t;
 	TokenNode *tokenNode;
+    Node *tempNode;
     R_LIST *r;
     T_LIST *rule, *aux1, *aux2;
 
-    flag = fscanf(arq,"%s %s\n",&type, &value);
-	//while( fgets(&temp,LMAXTOKEN,arq) && !(isEmpty(stack))){
+    flag = fscanf(arq,"%s %s\n", (char *) &type, (char *) &value);
 	while( (flag!=EOF) &&  !(isEmpty(stack)) ){
-		//Gets the current entrance Token
-		//printf("%s\n",temp);
-
-        /*
-		tkn = strtok(temp," ");
-        sprintf(type,"%s",tkn);
-     	tkn = strtok(NULL," \n\t\r");
-        sprintf(value,"%s",tkn);
-        currentToken = newToken(type,value);
-		*/
 
 		currentToken = newToken(value,type);
-		printf("Type: %s, Value: %s\n",type, value);
+		//printf("Type: %s, Value: %s\n",type, value);
 
 		tokenNode = pop(&stack);
 		if( isTerminal(tokenNode->token->type) && (strcmp(tokenNode->token->type,currentToken->type)==0) ){
-			tokenNode->node->child = newNode(currentToken->type);
+            tempNode = newNode(currentToken->type);
+            if(!tokenNode->node->child){
+                tokenNode->node->child = tempNode;
+            }
+            else{
+                addSibling(tokenNode->node->child,tempNode);
+            }
 
 			//Treats the special case of id and num because they're 'fake' terminals
 			if( (strcmp(currentToken->type,"id")==0) || (strcmp(currentToken->type,"num")==0) ){
-				tokenNode->node->child->child = newNode(currentToken->value);
+				tempNode->child = newNode(currentToken->value);
 			}
 
-			free(tokenNode);
-			flag = fscanf(arq,"%s %s\n",&type, &value);
+			//free(tokenNode);
+			flag = fscanf(arq,"%s %s\n",(char*) &type, (char*) &value);
 		}
 		else{
 			if( isNonTerminal(tokenNode->token->type) && isTerminal(currentToken->type)){
-				i = findNonTerminalIndex(tokenNode->token->type);
+                i = findNonTerminalIndex(tokenNode->token->type);
 				j = findTerminalIndex(currentToken->type);
 				ruleIndex = parsingTable[i][j];
 
+                Node *father = tokenNode->node;
+
+                //Adds the NT node to the tree
+                //Exception: the first NT has already been added
+                if(!tkncmp(initial,tokenNode->token)){
+                    if(!father->child){
+                        father->child = newNode(currentToken->value);
+                    }
+                    else{
+                        tempNode = newNode(tokenNode->token->type);
+                        addSibling(father->child,tempNode);
+                    }
+
+                    //updates father tree reference
+                    father = tempNode;
+                }
+
 				//There's no rule that satisfies it
 				if(ruleIndex==0){
-					printf("Error\n");
+					printf("There's no rule that satisfies it\nStack:%s CurrentToken:%s\n",tokenNode->token->type,currentToken->type);
 					return 1;
 				}
 
@@ -910,33 +972,31 @@ int main(int argc, char *argv[]) {
 				}
 				t = newToken(aux2->token->value,aux2->token->type);
                 if(strcmp(epsilonStr,t->type)!=0){ //doesn't include epsilon in the pile
-    				push(&stack,t,tokenNode->node);
+    				push(&stack,t,father);
     				while(rule->next!=aux2){
     					while(aux1->next!=aux2){
     						aux1 = aux1->next;
     					}
     					t = newToken(aux1->token->value,aux1->token->type);
-    					push(&stack,t,tokenNode->node);
+    					push(&stack,t,father);
 
     					aux2 = aux1;
     					aux1 = rule;
     				}
                 }
-
-				free(tokenNode);
+				//free(tokenNode);
 			}
 			else{
-				printf("Type:%s\n",currentToken->type);
+                printf("Type:%s\n",currentToken->type);
                 printf("Value:%s\n",currentToken->value);
-
                 printf("********\n");
                 printf("Type:%s\n",tokenNode->token->type);
-
 				printf("Error\n");
 				return 1;
 			}
 		}
 		free(currentToken);
+        //printTree(syntaxTree);
 	}
 
 	//if( (flag==EOF) && isEmpty(stack) ){
@@ -986,7 +1046,7 @@ int main(int argc, char *argv[]) {
     				}
                 }
 
-				free(tokenNode);
+				//free(tokenNode);
                 tokenNode = pop(&stack);
             }
             if(isEmpty(stack)){
@@ -994,15 +1054,19 @@ int main(int argc, char *argv[]) {
             }
             else{
                 printf("Error\n");
+                printf("Stack isn't empty\nStack:%s\n",stack->token->type);
                 return 1;
             }
         }
 	}
 	else{
-		printf("Error\n");
+		printf("File didn't ended\n");
 		return 1;
 	}
 
     fclose(arq);
+
+
+    printTree(syntaxTree);
 
 }

@@ -12,7 +12,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<ctype.h>
- 
+
 int isKeyword(char buffer[]) {
     char keywords[NKEYWORDS][LKEYWORDS] = KEYWORDS;
     int i;
@@ -46,7 +46,7 @@ int write(char buffer[], FILE *out, int isNumber, int isID, int isOp) {
     else return 0;
     return 1;
 }
- 
+
 int main(int argc, char *argv[]) {
     char ch, buffer[LMAXTOKEN];
     FILE *ca, *out = stdout;
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     int isID = 0;
     int isOp = 0;
     unsigned int line =0;
-    
+
     if(argc == 1) {
         printf("usage: %s input_file [output_file]\n", argv[0]);
         return 0;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
             return 2;
         }
     }
-    
+
     while((ch = fgetc(ca)) != EOF) {
            line++;
            if(isspace(ch) || isblank(ch)) {
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
            if(j == LMAXTOKEN) {
                printf("error in line %u: %s exceeded max token size of %d characters\n", line, buffer, LMAXTOKEN);
                return 2;
-           } 
+           }
     }
     fclose(ca);
     if(argc > 2) fclose(out);
