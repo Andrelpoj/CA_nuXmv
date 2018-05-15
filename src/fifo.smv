@@ -7,4 +7,5 @@ ASSIGN
     init(cs) := {q0};
     init(a) := {NULL,0,1};
     init(b) := {NULL,0,1};
-		next(cs) := case
+	next(cs) := case
+		(cs = id) & (b = NULL) &		(cs = id) & (b = NULL) &		(cs = id) & (a = NULL) &		(cs = id) & (a = NULL) &

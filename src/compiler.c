@@ -63,6 +63,42 @@ N_LIST* find(char* type){
     return list;
 }
 
+N_LIST* set_difference(N_LIST* t1,N_LIST* t2){
+    N_LIST *list = NULL, *aux = NULL, *temp=NULL;
+    int flag;
+
+    while(t1){
+        flag = 0;
+        aux = t2;
+        while( aux && !flag ){
+            if(strcmp(t1->node->content,aux->node->content)==0){
+                flag = 1;
+            }
+            aux = aux->next;
+        }
+
+        if(!flag){
+            temp = (N_LIST*) malloc(sizeof(N_LIST));
+            temp->node = t1->node;
+            temp->next = NULL;
+            if(!list){
+                list = temp;
+            }
+            else{
+                aux = list;
+                while(aux->next){
+                    aux = aux->next;
+                }
+                aux->next = temp;
+            }
+        }
+
+        t1 = t1->next;
+    }
+
+    return list;
+}
+
 int main(){
     generateSyntaxTree("rules.txt","fifo_resultado.txt");
 
@@ -122,7 +158,6 @@ int main(){
 
     //next
     fprintf(dest,"\tnext(cs) := case\n");
-
     //t_set -> id : id ( set ) [ data_constraint ]  t_set
     tempTree = search(syntaxTree,"t_set");
     char* aux;
@@ -136,13 +171,17 @@ int main(){
 
         //gets set
         tempTree = tempTree->sibling->sibling;
-        // tempTree2 = tempTree->child;
-        // while(tempTree2){
-        //     fprintf(dest,"\t\t(%s = %s) &",tempTree->content);
-        // }
+        //gets names - set
+        temp = set_difference(names,find_ids(tempTree));
+        while(temp){
+            fprintf(dest," (%s = NULL) &",temp->node->content);
+            temp = temp->next;
+        }
 
         //gets data_constraint
         tempTree = tempTree->sibling->sibling->sibling;
+        
+
         fprintf(dest,"\t\t(cs = %s) &",tempTree->content);
     }
 
