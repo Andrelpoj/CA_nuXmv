@@ -1,5 +1,10 @@
 #include "syntax.c"
 
+//Non-terminals used to structure a data_constraint
+#define DC_IGNORE {"F\'","E\'","T\'"}
+#define N_DC_IGNORE 3
+#define L_DC_IGNORE 2
+
 Node* search(Node* tree,char* type){
     //depth search that returns first ocurrence with "content = type" in tree
     if(!tree) return NULL;
@@ -99,6 +104,47 @@ N_LIST* set_difference(N_LIST* t1,N_LIST* t2){
     return list;
 }
 
+char* getsDataConstraint(Node *t){
+    char* result = "";
+    if(!t) return result;
+
+    // printf("%s\n",t->content);
+    //
+    // Node *teste = t->child;
+    // while(teste){
+    //     printf("%s\n",teste);
+    //     teste = teste->sibling;
+    // }
+    //
+    // return result;
+
+    Node *aux;
+    int flag, i;
+    if(!(t->child)){
+        char ignore[N_DC_IGNORE][L_DC_IGNORE] = DC_IGNORE;
+        flag = i = 0;
+        while((!flag)&&(i<N_DC_IGNORE)){
+            if(strcmp(t->content,ignore[i])==0) flag = 1;
+            i++;
+        }
+
+        if(!flag){
+            return t->content;
+        }
+        else{
+            return result;
+        }
+    }
+    else{
+        aux = t->child;
+        while(aux){
+            strcat(result,getsDataConstraint(aux));
+            aux = aux->sibling;
+        }
+        return result;
+    }
+}
+
 int main(){
     generateSyntaxTree("rules.txt","fifo_resultado.txt");
 
@@ -160,14 +206,15 @@ int main(){
     fprintf(dest,"\tnext(cs) := case\n");
     //t_set -> id : id ( set ) [ data_constraint ]  t_set
     tempTree = search(syntaxTree,"t_set");
-    char* aux;
+    char* secondId;
     while(tempTree->child){
         tempTree = tempTree->child;
-        fprintf(dest,"\t\t(cs = %s) &",tempTree->content);
+        //gets the first id
+        fprintf(dest,"\t\t(cs = %s) &",tempTree->child->content);
 
         //gets the second id
         tempTree = tempTree->sibling->sibling;
-        aux = tempTree->content;
+        secondId = tempTree->child->content;
 
         //gets set
         tempTree = tempTree->sibling->sibling;
@@ -178,11 +225,16 @@ int main(){
             temp = temp->next;
         }
 
+        //error in data_constraint
+        break;
         //gets data_constraint
         tempTree = tempTree->sibling->sibling->sibling;
-        
+        char* dc = getsDataConstraint(tempTree);
+        printf("dc\n");
+        fprintf(dest," (%s)",dc);
+        tempTree = tempTree->sibling->sibling;
 
-        fprintf(dest,"\t\t(cs = %s) &",tempTree->content);
+        fprintf(dest,": %s;\n",secondId);
     }
 
 
