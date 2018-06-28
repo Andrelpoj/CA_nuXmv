@@ -255,6 +255,8 @@ int main(){
             temp = temp->next;
         }
 
+        //error in data_constraint
+        break;
         //gets data_constraint
         tempTree = tempTree->sibling->sibling->sibling;
         fprintf(dest,"%s"," (");
