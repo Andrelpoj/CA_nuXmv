@@ -8,4 +8,7 @@ ASSIGN
     init(a) := {NULL,0,1};
     init(b) := {NULL,0,1};
 	next(cs) := case
-		(cs = id) & (b = NULL) &		(cs = id) & (b = NULL) &		(cs = id) & (a = NULL) &		(cs = id) & (a = NULL) &
+		(cs = q0) & (b = NULL) & ( a = 0 ) : p0;
+		(cs = q0) & (b = NULL) & ( a = 1 ) : p1;
+		(cs = p0) & (a = NULL) & ( b = 0 ) : q0;
+		(cs = p1) & (a = NULL) & ( b = 1 ) : q0;

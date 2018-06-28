@@ -1,5 +1,10 @@
 #include "syntax.c"
 
+//Non-terminals used to structure a data_constraint
+#define DC_IGNORE {"F\'","E\'","T\'"}
+#define N_DC_IGNORE 3
+#define L_DC_IGNORE 3
+
 Node* search(Node* tree,char* type){
     //depth search that returns first ocurrence with "content = type" in tree
     if(!tree) return NULL;
@@ -99,6 +104,77 @@ N_LIST* set_difference(N_LIST* t1,N_LIST* t2){
     return list;
 }
 
+void writesDataConstraint(Node *t,FILE *dest){
+    //ajeitar a questao dos parenteses
+    if(!t) return;
+    int i,flag;
+    Node *child = NULL;
+    if(!t->child){
+        char ignore[N_DC_IGNORE][L_DC_IGNORE] = DC_IGNORE;
+        flag = i = 0;
+        while((!flag)&&(i<N_DC_IGNORE)){
+            if(strcmp(t->content,ignore[i])==0) flag = 1;
+            //printf("flag: %d, ignore: %s\n",flag,ignore[i]);
+            i++;
+        }
+        if(!flag){
+            fprintf(dest," %s",t->content);
+        }
+    }
+    else{
+        child = t->child;
+        while(child){
+            writesDataConstraint(child,dest);
+            child = child->sibling;
+        }
+    }
+}
+
+/*
+char* getsDataConstraint(Node *t, char buffer[]){
+    char result[255];
+    char cat[255];
+    strcpy(result,"");
+    if(!t) return result;
+
+    printf("%s\n",t->content);
+    Node *teste = t->child;
+    while(teste){
+        printf("%s ",teste);
+        teste = teste->sibling;
+    }
+    printf("\n\n");
+
+    Node *aux;
+    int flag, i;
+    if(!(t->child)){
+
+        char ignore[N_DC_IGNORE][L_DC_IGNORE] = DC_IGNORE;
+        flag = i = 0;
+        while((!flag)&&(i<N_DC_IGNORE)){
+            if(strcmp(t->content,ignore[i])==0) flag = 1;
+            i++;
+        }
+
+        if(!flag){
+            return t->content;
+        }
+        else{
+            return result;
+        }
+    }
+    else{
+        aux = t->child;
+        while(aux){
+            strcpy(cat,getsDataConstraint(aux));
+            strcat(result,cat);
+            aux = aux->sibling;
+        }
+        return result;
+    }
+}
+*/
+
 int main(){
     generateSyntaxTree("rules.txt","fifo_resultado.txt");
 
@@ -160,14 +236,15 @@ int main(){
     fprintf(dest,"\tnext(cs) := case\n");
     //t_set -> id : id ( set ) [ data_constraint ]  t_set
     tempTree = search(syntaxTree,"t_set");
-    char* aux;
+    char* secondId;
     while(tempTree->child){
         tempTree = tempTree->child;
-        fprintf(dest,"\t\t(cs = %s) &",tempTree->content);
+        //gets the first id
+        fprintf(dest,"\t\t(cs = %s) &",tempTree->child->content);
 
         //gets the second id
         tempTree = tempTree->sibling->sibling;
-        aux = tempTree->content;
+        secondId = tempTree->child->content;
 
         //gets set
         tempTree = tempTree->sibling->sibling;
@@ -180,9 +257,15 @@ int main(){
 
         //gets data_constraint
         tempTree = tempTree->sibling->sibling->sibling;
-        
+        fprintf(dest,"%s"," (");
+        writesDataConstraint(tempTree,dest);
+        fprintf(dest,"%s"," ) ");
 
-        fprintf(dest,"\t\t(cs = %s) &",tempTree->content);
+
+        //fprintf(dest," (%s)",dc);
+        tempTree = tempTree->sibling->sibling;
+
+        fprintf(dest,": %s;\n",secondId);
     }
 
 

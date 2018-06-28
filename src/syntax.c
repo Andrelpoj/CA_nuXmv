@@ -807,6 +807,11 @@ void createTable(char* orig){
 
     printf("\n\n\n");
     printf("PARSING TABLE\n*****************\n");
+    for(i=0;i<quant_T;i++){
+        printf("%s ",TERMINALS[i]);
+    }
+    printf("\n");
+
     for(i=0;i<quant_NT;i++){
         printf("%s: ",NONTERMINALS[i]);
         for(j=0;j<quant_T;j++){
@@ -929,26 +934,28 @@ int generateSyntaxTree(char *rules_file,char *token_file) {
 			flag = fscanf(arq,"%s %s\n",(char*) &type, (char*) &value);
 		}
 		else{
-			if( isNonTerminal(tokenNode->token->type) && isTerminal(currentToken->type)){
+		    if( isNonTerminal(tokenNode->token->type) && isTerminal(currentToken->type)){
+                //printf("NT:%s T:%s \n",tokenNode->token->type,currentToken->value);
                 i = findNonTerminalIndex(tokenNode->token->type);
-				j = findTerminalIndex(currentToken->type);
-				ruleIndex = parsingTable[i][j];
-
+                j = findTerminalIndex(currentToken->type);
+		        ruleIndex = parsingTable[i][j];
                 Node *father = tokenNode->node;
+                //printf("Father: %s\n",father->content);
 
                 //Adds the NT node to the tree
                 //Exception: the first NT has already been added
                 if(!tkncmp(initial,tokenNode->token)){
                     if(!father->child){
-                        father->child = newNode(currentToken->value);
+                        father->child = newNode(tokenNode->token->type);
+                        //updates father tree reference
+                        father = father->child;
                     }
                     else{
                         tempNode = newNode(tokenNode->token->type);
                         addSibling(father->child,tempNode);
+                        //updates father tree reference
+                        father = tempNode;
                     }
-
-                    //updates father tree reference
-                    father = tempNode;
                 }
 
 				//There's no rule that satisfies it
@@ -983,7 +990,7 @@ int generateSyntaxTree(char *rules_file,char *token_file) {
     					aux2 = aux1;
     					aux1 = rule;
     				}
-                }
+        }
 				//free(tokenNode);
 			}
 			else{
@@ -999,7 +1006,7 @@ int generateSyntaxTree(char *rules_file,char *token_file) {
         //printTree(syntaxTree);
 	}
 
-	//if( (flag==EOF) && isEmpty(stack) ){
+    //if( (flag==EOF) && isEmpty(stack) ){
     if( (flag==EOF)){
         if(isEmpty(stack)){
             printf("Accepted\n");
@@ -1007,21 +1014,36 @@ int generateSyntaxTree(char *rules_file,char *token_file) {
         else{
             tokenNode = pop(&stack);
             while(tokenNode && isNonTerminal(tokenNode->token->type)){
-            //if(isNonTerminal(tokenNode->token->type)){
+                //if(isNonTerminal(tokenNode->token->type)){
                 i = findNonTerminalIndex(tokenNode->token->type);
                 j = findTerminalIndex(epsilonStr);
                 ruleIndex = parsingTable[i][j];
 
+                Node *father = tokenNode->node;
+                //Adds the NT node to the tree
+                //Exception: the first NT has already been added
+                if(!tkncmp(initial,tokenNode->token)){
+                    if(!father->child){
+                        father->child = newNode(currentToken->value);
+                    }
+                    else{
+                        tempNode = newNode(tokenNode->token->type);
+                        addSibling(father->child,tempNode);
+                    }
+                    //updates father tree reference
+                    father = tempNode;
+                }
+
 				//There's no rule that satisfies it
-				if(ruleIndex==0){
-					printf("Error\n");
+                if(ruleIndex==0){
+                    printf("Error\n");
 					return 1;
 				}
 
-				//gets the production rule
+  				//gets the production rule
 				r = RULES;
 				for(k=1;k<ruleIndex;k++){
-					r = r->next;
+			        r = r->next;
 				}
 				rule = r->rule;
 
@@ -1045,10 +1067,10 @@ int generateSyntaxTree(char *rules_file,char *token_file) {
     					aux1 = rule;
     				}
                 }
-
 				//free(tokenNode);
                 tokenNode = pop(&stack);
             }
+
             if(isEmpty(stack)){
                 printf("Accepted\n");
             }
