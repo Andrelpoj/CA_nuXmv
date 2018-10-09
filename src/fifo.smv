@@ -12,3 +12,4 @@ ASSIGN
 		(cs = q0) & (b = NULL) & ( a = 1 ) : p1;
 		(cs = p0) & (a = NULL) & ( b = 0 ) : q0;
 		(cs = p1) & (a = NULL) & ( b = 1 ) : q0;
+	esac;

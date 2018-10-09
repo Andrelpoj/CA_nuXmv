@@ -81,7 +81,6 @@ N_LIST* set_difference(N_LIST* t1,N_LIST* t2){
             }
             aux = aux->next;
         }
-
         if(!flag){
             temp = (N_LIST*) malloc(sizeof(N_LIST));
             temp->node = t1->node;
@@ -97,10 +96,8 @@ N_LIST* set_difference(N_LIST* t1,N_LIST* t2){
                 aux->next = temp;
             }
         }
-
         t1 = t1->next;
     }
-
     return list;
 }
 
@@ -175,10 +172,22 @@ char* getsDataConstraint(Node *t, char buffer[]){
 }
 */
 
-int main(){
-    generateSyntaxTree("rules.txt","fifo_resultado.txt");
+int main(int argc, char *argv[]){
+    FILE *dest = stdout;
+    if(argc == 1) {
+        printf("usage: %s rules_file token_file [output_file]\n", argv[0]);
+        return 0;
+    }
+    if(argc > 3) {
+        dest = fopen(argv[3], "w");
+        if(dest == NULL) {
+            printf("error while opening file %s\n", argv[2]);
+            return 2;
+        }
+    }
 
-    FILE *dest;
+    generateSyntaxTree(argv[1],argv[2]);
+
     N_LIST *states, *istates, *names, *temp;
     Node *tempTree, *tempTree2;
     states = find("states");
@@ -186,7 +195,6 @@ int main(){
     names = find("names");
 
     //VAR
-    dest = fopen("fifo.smv","w");
     char *line = "MODULE main\nVAR\n";
     fprintf(dest,"%s",line);
 
@@ -267,7 +275,7 @@ int main(){
 
         fprintf(dest,": %s;\n",secondId);
     }
-
+    fprintf(dest,"\tesac;\n");
 
     fclose(dest);
 
