@@ -269,13 +269,20 @@ int main(int argc, char *argv[]){
         writesDataConstraint(tempTree,dest);
         fprintf(dest,"%s"," ) ");
 
-
         //fprintf(dest," (%s)",dc);
         tempTree = tempTree->sibling->sibling;
 
         fprintf(dest,": %s;\n",secondId);
     }
     fprintf(dest,"\tesac;\n");
+
+    //variation of values in ports
+    temp = names;
+    while(temp){
+        fprintf(dest,"\tnext(%s) := {",temp->node->content);
+        fprintf(dest,"NULL,0,1};\n");
+        temp = temp->next;
+    }
 
     fclose(dest);
 

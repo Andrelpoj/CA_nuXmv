@@ -1,0 +1,18 @@
+MODULE main
+VAR
+    cs : {s0};
+    f : {NULL,0,1};
+    e : {NULL,0,1};
+    b : {NULL,0,1};
+ASSIGN
+    init(cs) := {s0};
+    init(f) := {NULL,0,1};
+    init(e) := {NULL,0,1};
+    init(b) := {NULL,0,1};
+	next(cs) := case
+		(cs = s0) & (b = NULL) & ( f = e ) : s0;
+		(cs = s0) & (e = NULL) & ( f = b ) : s0;
+	esac;
+	next(f) := {NULL,0,1};
+	next(e) := {NULL,0,1};
+	next(b) := {NULL,0,1};

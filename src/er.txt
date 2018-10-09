@@ -1,0 +1,6 @@
+CA exclusiveRouter
+STATES s0
+INITIAL STATES s0
+NAMES f, e, b
+TRANSITIONS s0 : s0 (f,e) [f = e]
+s0 : s0 (f,b) [f = b]
