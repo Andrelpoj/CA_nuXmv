@@ -127,51 +127,6 @@ void writesDataConstraint(Node *t,FILE *dest){
     }
 }
 
-/*
-char* getsDataConstraint(Node *t, char buffer[]){
-    char result[255];
-    char cat[255];
-    strcpy(result,"");
-    if(!t) return result;
-
-    printf("%s\n",t->content);
-    Node *teste = t->child;
-    while(teste){
-        printf("%s ",teste);
-        teste = teste->sibling;
-    }
-    printf("\n\n");
-
-    Node *aux;
-    int flag, i;
-    if(!(t->child)){
-
-        char ignore[N_DC_IGNORE][L_DC_IGNORE] = DC_IGNORE;
-        flag = i = 0;
-        while((!flag)&&(i<N_DC_IGNORE)){
-            if(strcmp(t->content,ignore[i])==0) flag = 1;
-            i++;
-        }
-
-        if(!flag){
-            return t->content;
-        }
-        else{
-            return result;
-        }
-    }
-    else{
-        aux = t->child;
-        while(aux){
-            strcpy(cat,getsDataConstraint(aux));
-            strcat(result,cat);
-            aux = aux->sibling;
-        }
-        return result;
-    }
-}
-*/
-
 int main(int argc, char *argv[]){
     FILE *dest = stdout;
     if(argc == 1) {
@@ -212,11 +167,43 @@ int main(int argc, char *argv[]){
     }
     fprintf(dest,"};\n");
 
+    fprintf(dest,"    tr: boolean;\n");
+
     temp = names;
     while(temp){
         fprintf(dest,"    %s : {",temp->node->content);
         fprintf(dest,"NULL,0,1};\n"); //data domain of the port
         temp = temp->next;
+    }
+
+    //DEFINE
+    fprintf(dest,"DEFINE transitions := ");
+    tempTree = search(syntaxTree,"t_set");
+    while(tempTree->child){
+        tempTree = tempTree->child;
+        //gets the first id
+        fprintf(dest,"((cs = %s) &",tempTree->child->content);
+        //jumps over the second id
+        tempTree = tempTree->sibling->sibling;
+        //gets set
+        tempTree = tempTree->sibling->sibling;
+        //gets names - set
+        temp = set_difference(names,find_ids(tempTree));
+        while(temp){
+            fprintf(dest,"(%s = NULL) &",temp->node->content);
+            temp = temp->next;
+        }
+        //gets data_constraint
+        tempTree = tempTree->sibling->sibling->sibling;
+        fprintf(dest,"%s"," (");
+        writesDataConstraint(tempTree,dest);
+        fprintf(dest,"%s"," ))");
+
+        tempTree = tempTree->sibling->sibling;
+        if(tempTree->child)
+            fprintf(dest,"%s"," |\n    ");
+        else
+            fprintf(dest,"%s",";\n");
     }
 
     //ASSIGN
@@ -232,6 +219,8 @@ int main(int argc, char *argv[]){
         temp = temp->next;
     }
     fprintf(dest,"};\n");
+
+    fprintf(dest,"    init(tr) := FALSE;\n");
 
     temp = names;
     while(temp){
@@ -269,17 +258,22 @@ int main(int argc, char *argv[]){
         writesDataConstraint(tempTree,dest);
         fprintf(dest,"%s"," ) ");
 
-        //fprintf(dest," (%s)",dc);
         tempTree = tempTree->sibling->sibling;
-
         fprintf(dest,": %s;\n",secondId);
     }
-    fprintf(dest,"\tesac;\n");
+    //remains in the same state if there's no transition available
+    fprintf(dest,"        TRUE : cs;\n");
+    fprintf(dest,"    esac;\n");
+
+    fprintf(dest,"    next(tr) := case \n");
+    fprintf(dest,"        transitions : TRUE;\n");
+    fprintf(dest,"        TRUE : FALSE;\n");
+    fprintf(dest,"    esac;\n");
 
     //variation of values in ports
     temp = names;
     while(temp){
-        fprintf(dest,"\tnext(%s) := {",temp->node->content);
+        fprintf(dest,"    next(%s) := {",temp->node->content);
         fprintf(dest,"NULL,0,1};\n");
         temp = temp->next;
     }

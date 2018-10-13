@@ -1,0 +1,47 @@
+MODULE main
+VAR
+    cs : {qp,q0p,q1p,qp0,q0p0,q1p0,qp1,q0p1,q1p1};
+    tr: boolean;
+    a : {NULL,0,1};
+    b : {NULL,0,1};
+    c : {NULL,0,1};
+DEFINE transitions := ((cs = qp) &(b = NULL) &(c = NULL) & ( a = 0 )) |
+    ((cs = qp) &(b = NULL) &(c = NULL) & ( a = 1 )) |
+    ((cs = q0p) &(a = NULL) &(c = NULL) & ( b = 0 )) |
+    ((cs = q1p) &(a = NULL) &(c = NULL) & ( b = 1 )) |
+    ((cs = qp0) &(b = NULL) &(c = NULL) & ( a = 0 )) |
+    ((cs = qp0) &(b = NULL) &(c = NULL) & ( a = 1 )) |
+    ((cs = qp0) &(a = NULL) &(b = NULL) & ( c = 0 )) |
+    ((cs = q0p0) &(a = NULL) &(b = NULL) & ( c = 0 )) |
+    ((cs = q1p0) &(a = NULL) &(b = NULL) & ( c = 0 )) |
+    ((cs = qp1) &(a = NULL) &(b = NULL) & ( c = 1 )) |
+    ((cs = qp1) &(b = NULL) &(c = NULL) & ( a = 0 )) |
+    ((cs = qp1) &(b = NULL) &(c = NULL) & ( a = 1 ));
+ASSIGN
+    init(cs) := {qp};
+    init(tr) := FALSE;
+    init(a) := {NULL,0,1};
+    init(b) := {NULL,0,1};
+    init(c) := {NULL,0,1};
+	next(cs) := case
+		(cs = qp) & (b = NULL) & (c = NULL) & ( a = 0 ) : q0p;
+		(cs = qp) & (b = NULL) & (c = NULL) & ( a = 1 ) : q1p;
+		(cs = q0p) & (a = NULL) & (c = NULL) & ( b = 0 ) : qp0;
+		(cs = q1p) & (a = NULL) & (c = NULL) & ( b = 1 ) : qp1;
+		(cs = qp0) & (b = NULL) & (c = NULL) & ( a = 0 ) : q0p0;
+		(cs = qp0) & (b = NULL) & (c = NULL) & ( a = 1 ) : q1p0;
+		(cs = qp0) & (a = NULL) & (b = NULL) & ( c = 0 ) : qp;
+		(cs = q0p0) & (a = NULL) & (b = NULL) & ( c = 0 ) : q0p;
+		(cs = q1p0) & (a = NULL) & (b = NULL) & ( c = 0 ) : q1p;
+		(cs = qp1) & (a = NULL) & (b = NULL) & ( c = 1 ) : qp;
+		(cs = qp1) & (b = NULL) & (c = NULL) & ( a = 0 ) : q0p1;
+		(cs = qp1) & (b = NULL) & (c = NULL) & ( a = 1 ) : q1p1;
+        TRUE : cs;
+    esac;
+    next(tr) := case 
+        transitions : TRUE;
+        TRUE : FALSE;
+    esac;
+    next(a) := {NULL,0,1};
+    next(b) := {NULL,0,1};
+    next(c) := {NULL,0,1};

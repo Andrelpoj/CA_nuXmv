@@ -417,7 +417,6 @@ void fillFirstTable(int quant_NT){
                 list = list->next;
 
                 insert(&firstTable[i],newToken(list->token->value,list->token->type));
-                //append(&(firstTable[i]),newToken(list->token->value,list->token->value));
             }
             r = r->next;
         }
@@ -697,17 +696,8 @@ void createTable(char* orig){
     }
     quant_NT = i;
 
-    /*
-    i = 0;
-    while(strlen(NONTERMINALS[i])!=0){
-        printf("%s\n",NONTERMINALS[i]);
-        i++;
-    }
-    */
 
     while ( fgets (temp , LMAXTOKEN , arq) != NULL ) {
-//      printf("%d",strlen(temp));
-//      printf("%s\n",temp);
         char *tkn = strtok(temp," ");
         T_LIST* rule = NULL;
 
@@ -1006,7 +996,6 @@ int generateSyntaxTree(char *rules_file,char *token_file) {
         //printTree(syntaxTree);
 	}
 
-    //if( (flag==EOF) && isEmpty(stack) ){
     if( (flag==EOF)){
         if(isEmpty(stack)){
             printf("Accepted\n");
@@ -1014,7 +1003,6 @@ int generateSyntaxTree(char *rules_file,char *token_file) {
         else{
             tokenNode = pop(&stack);
             while(tokenNode && isNonTerminal(tokenNode->token->type)){
-                //if(isNonTerminal(tokenNode->token->type)){
                 i = findNonTerminalIndex(tokenNode->token->type);
                 j = findTerminalIndex(epsilonStr);
                 ruleIndex = parsingTable[i][j];
@@ -1036,7 +1024,8 @@ int generateSyntaxTree(char *rules_file,char *token_file) {
 
 				//There's no rule that satisfies it
                 if(ruleIndex==0){
-                    printf("Error\n");
+                    printf("Error: No rule satisfies it.\n");
+                    printf("NT: %s, T:%s\n", NONTERMINALS[i],TERMINALS[j]);
 					return 1;
 				}
 

@@ -1,0 +1,16 @@
+CA fifo2
+STATES qp, q0p, q1p, qp0, q0p0, q1p0, qp1, q0p1, q1p1
+INITIAL STATES qp
+NAMES a, b, c
+TRANSITIONS qp   : q0p  (a) [a = 0]
+            qp   : q1p  (a) [a = 1]
+            q0p  : qp0  (b) [b = 0]
+            q1p  : qp1  (b) [b = 1]
+            qp0  : q0p0 (a) [a = 0]
+            qp0  : q1p0 (a) [a = 1]
+            qp0  : qp   (c) [c = 0]
+            q0p0 : q0p  (c) [c = 0]
+            q1p0 : q1p  (c) [c = 0]
+            qp1  : qp   (c) [c = 1]
+            qp1  : q0p1 (a) [a = 0]
+            qp1  : q1p1 (a) [a = 1]
