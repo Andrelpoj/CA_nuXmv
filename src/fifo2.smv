@@ -38,7 +38,7 @@ ASSIGN
 		(cs = qp1) & (b = NULL) & (c = NULL) & ( a = 1 ) : q1p1;
         TRUE : cs;
     esac;
-    next(tr) := case 
+    next(tr) := case
         transitions : TRUE;
         TRUE : FALSE;
     esac;
